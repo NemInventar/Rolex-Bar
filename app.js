@@ -271,18 +271,26 @@ async function _syncOrdrerToSupabase() {
     for (const o of ordrer) {
       const { ordre_linjer, log, items, kilde, kusuri, ...ordreRow } = o;
       await sb.from('ordrer').upsert({ ...ordreRow, restaurant_id: RESTAURANT_ID });
-      if (items && items.length) {
-        const linjer = items.map(i => ({
-          ordre_id: o.id,
-          produkt_id: i.produkt_id,
-          navn: i.produkt_navn,
-          pris: i.produkt_pris,
-          antal: i.antal
-        }));
-        await sb.from('ordre_linjer').upsert(linjer);
-      }
+      // ordre_linjer skrives KUN ved oprettelse via _insertNyOrdre — aldrig her
     }
   } catch(e) { console.error('Supabase sync fejl:', e); }
+}
+
+async function _insertNyOrdre(ordre) {
+  try {
+    const { ordre_linjer, log, items, kilde, kusuri, ...ordreRow } = ordre;
+    await sb.from('ordrer').insert({ ...ordreRow, restaurant_id: RESTAURANT_ID });
+    if (items && items.length) {
+      const linjer = items.map(i => ({
+        ordre_id: ordre.id,
+        produkt_id: i.produkt_id,
+        navn: i.produkt_navn,
+        pris: i.produkt_pris,
+        antal: i.antal
+      }));
+      await sb.from('ordre_linjer').insert(linjer);
+    }
+  } catch(e) { console.error('Insert ordre fejl:', e); }
 }
 
 function gemTavolina() {
@@ -545,7 +553,8 @@ function opretBestilling(){
     items:kurv.map(i=>({...i})),
     log:[]
   };
-  ordrer.push(ordre); gemData();
+  ordrer.push(ordre);
+  _insertNyOrdre(ordre); // insert order + linjer én gang
   rydKurv(); opdaterAabneBadge();
   visCelebrationPorosi(ordre);
 }
