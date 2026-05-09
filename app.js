@@ -342,7 +342,8 @@ async function initTavolinat() {
 // =============================================
 function euro(v){return v.toFixed(2).replace('.',',')+' €'}
 function formatData(s){const d=new Date(s);return d.toLocaleDateString('sq-AL')+' '+d.toLocaleTimeString('sq-AL',{hour:'2-digit',minute:'2-digit'})}
-function sotDita(){return new Date().toISOString().slice(0,10)}
+function sotDita(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
+function _localIso(dateStr,time){return new Date(dateStr+'T'+time).toISOString()}
 function unikID(){return 'id_'+Date.now()+'_'+Math.random().toString(36).slice(2,7)}
 function visToast(msg,tip='ok'){const t=document.getElementById('toast');t.textContent=msg;t.style.background=tip==='gabim'?'#C0392B':tip==='info'?'#2980B9':'#3B1F0E';t.classList.add('vis');setTimeout(()=>t.classList.remove('vis'),3000)}
 function mbyllModal(id){document.getElementById(id).classList.remove('vis')}
@@ -1324,17 +1325,20 @@ async function opdaterOmsaetning(){
   const d=new Date(dato);
   let fraStr,tilStr,labels=[],data=[],titull='';
   if(aktivPeriode==='dag'){
-    fraStr=dato+'T00:00:00';tilStr=dato+'T23:59:59';
+    fraStr=_localIso(dato,'00:00:00');tilStr=_localIso(dato,'23:59:59');
     titull='Xhiro orë pas ore — '+d.toLocaleDateString('sq-AL');
   } else if(aktivPeriode==='uge'){
     const e=new Date(d);e.setDate(d.getDate()-((d.getDay()+6)%7));
     const s=new Date(e);s.setDate(e.getDate()+6);
-    fraStr=e.toISOString().slice(0,10)+'T00:00:00';tilStr=s.toISOString().slice(0,10)+'T23:59:59';
+    const ef=`${e.getFullYear()}-${String(e.getMonth()+1).padStart(2,'0')}-${String(e.getDate()).padStart(2,'0')}`;
+    const sf=`${s.getFullYear()}-${String(s.getMonth()+1).padStart(2,'0')}-${String(s.getDate()).padStart(2,'0')}`;
+    fraStr=_localIso(ef,'00:00:00');tilStr=_localIso(sf,'23:59:59');
     titull='Xhiro ditore — Java '+(()=>{const d2=new Date(Date.UTC(e.getFullYear(),e.getMonth(),e.getDate()));d2.setUTCDate(d2.getUTCDate()+4-(d2.getUTCDay()||7));return Math.ceil(((d2-new Date(Date.UTC(d2.getUTCFullYear(),0,1)))/86400000+1)/7)})();
   } else {
     const v=d.getFullYear(),m=d.getMonth(),nd=new Date(v,m+1,0).getDate();
-    fraStr=`${v}-${String(m+1).padStart(2,'0')}-01T00:00:00`;
-    tilStr=`${v}-${String(m+1).padStart(2,'0')}-${String(nd).padStart(2,'0')}T23:59:59`;
+    const mStr=String(m+1).padStart(2,'0');
+    fraStr=_localIso(`${v}-${mStr}-01`,'00:00:00');
+    tilStr=_localIso(`${v}-${mStr}-${String(nd).padStart(2,'0')}`,'23:59:59');
     titull='Xhiro mujore — '+d.toLocaleDateString('sq-AL',{month:'long',year:'numeric'});
   }
   const {data:rows,error}=await sb.from('ordrer').select('*,ordre_linjer(*)').eq('restaurant_id',RESTAURANT_ID).eq('status','betalt').gte('oprettet',fraStr).lte('oprettet',tilStr);
@@ -1382,8 +1386,8 @@ async function opdaterShitjetProdukt(){
   const liste=document.getElementById('produkt-shitje-liste');
   liste.innerHTML='<div class="ps-loading">Duke ngarkuar...</div>';
   let q=sb.from('ordrer').select('ordre_linjer(navn,pris,antal)').eq('restaurant_id',RESTAURANT_ID).eq('status','betalt');
-  if(fra) q=q.gte('oprettet',fra+'T00:00:00');
-  if(til) q=q.lte('oprettet',til+'T23:59:59');
+  if(fra) q=q.gte('oprettet',_localIso(fra,'00:00:00'));
+  if(til) q=q.lte('oprettet',_localIso(til,'23:59:59'));
   const {data,error}=await q;
   if(error){liste.innerHTML='<div class="ps-loading" style="color:var(--roed)">Gabim gjatë ngarkimit</div>';return}
   const agg={};
@@ -1432,8 +1436,8 @@ async function opdaterHistorik(){
     .in('status',['betalt','afvist'])
     .order('oprettet',{ascending:false})
     .limit(200);
-  if(fra) q=q.gte('oprettet',fra+'T00:00:00');
-  if(til) q=q.lte('oprettet',til+'T23:59:59');
+  if(fra) q=q.gte('oprettet',_localIso(fra,'00:00:00'));
+  if(til) q=q.lte('oprettet',_localIso(til,'23:59:59'));
   if(bet) q=q.eq('betaling',bet);
   if(stat) q=q.eq('status',stat);
 
