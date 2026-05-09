@@ -1357,28 +1357,52 @@ function eksporterCSV(){
 // =============================================
 // HISTORIKU
 // =============================================
-function opdaterHistorik(){
+async function opdaterHistorik(){
   const fra=document.getElementById('hist-fra').value,til=document.getElementById('hist-til').value;
   const bet=document.getElementById('hist-betaling').value,stat=document.getElementById('hist-status').value;
-  let vis=[...ordrer].filter(o=>o.status!=='ventende'&&o.status!=='aaben').sort((a,b)=>new Date(b.oprettet)-new Date(a.oprettet));
-  if(fra) vis=vis.filter(o=>o.oprettet.slice(0,10)>=fra);
-  if(til) vis=vis.filter(o=>o.oprettet.slice(0,10)<=til);
-  if(bet) vis=vis.filter(o=>o.betaling===bet);
-  if(stat) vis=vis.filter(o=>o.status===stat);
   const liste=document.getElementById('historik-liste');
+  liste.innerHTML='<div class="ingen-data" style="padding:30px">Duke ngarkuar...</div>';
+
+  let q=sb.from('ordrer')
+    .select('*, ordre_linjer(*)')
+    .eq('restaurant_id',RESTAURANT_ID)
+    .in('status',['betalt','afvist'])
+    .order('oprettet',{ascending:false})
+    .limit(200);
+  if(fra) q=q.gte('oprettet',fra+'T00:00:00');
+  if(til) q=q.lte('oprettet',til+'T23:59:59');
+  if(bet) q=q.eq('betaling',bet);
+  if(stat) q=q.eq('status',stat);
+
+  const {data,error}=await q;
+  if(error){liste.innerHTML='<div class="ingen-data" style="padding:30px">Gabim gjatë ngarkimit</div>';return}
+
+  const vis=(data||[]).map(o=>({
+    ...o,
+    items:(o.ordre_linjer||[]).map(l=>({produkt_id:l.produkt_id,produkt_navn:l.navn,produkt_pris:l.pris,antal:l.antal,note:''})),
+    log:[]
+  }));
+
   if(!vis.length){liste.innerHTML='<div class="ingen-data" style="padding:30px">Nuk ka porosi me këto filtra</div>';return}
-  liste.innerHTML=vis.map(o=>`<div class="ht-raekke" onclick="hapFature(ordrer.find(x=>x.id==='${o.id}'))">
+  liste.innerHTML=vis.map(o=>`<div class="ht-raekke" onclick='hapFature(${JSON.stringify(o)})'>
     <div>#${o.ordre_nummer}</div>
     <div>${formatData(o.oprettet)}</div>
     <div>${euro(o.total)}</div>
     <div>${o.betaling==='kontant'?'Kesh':o.betaling==='kort'?'Kartë':o.betaling||'–'}</div>
     <div><span class="ht-status ${o.status==='betalt'?'paguar':'refuzuar'}">${o.status==='betalt'?'Paguar':'Refuzuar'}</span></div>
     <div style="display:flex;gap:3px;align-items:center">
-      <button class="ht-print-btn" onclick="event.stopPropagation();hapFature(ordrer.find(x=>x.id==='${o.id}'))">🖨 Printo</button>
-      ${o.status==='betalt'?`<button class="ht-kthe-btn" onclick="event.stopPropagation();ktheOrdren('${o.id}')">↩ Kthe</button>`:''}
-      ${erAdmin?`<button class="ht-fshi-btn" onclick="event.stopPropagation();fshiNjeOrdre('${o.id}')">🗑</button>`:''}
+      <button class="ht-print-btn" onclick="event.stopPropagation();hapFature(${JSON.stringify(o).replace(/'/g,'&#39;')})">🖨 Printo</button>
+      ${erAdmin?`<button class="ht-fshi-btn" onclick="event.stopPropagation();fshiNjeOrdreHistorik('${o.id}')">🗑</button>`:''}
     </div>
   </div>`).join('');
+}
+
+async function fshiNjeOrdreHistorik(id){
+  if(!erAdmin){hapLoginModalNormal();visToast('🔒 Keni nevojë për login Admin!','gabim');return}
+  if(!confirm('Fshi këtë porosi nga historiku?')) return;
+  await sb.from('ordrer').delete().eq('id',id);
+  opdaterHistorik();
+  visToast('Porosi u fshi ✓');
 }
 
 // =============================================
