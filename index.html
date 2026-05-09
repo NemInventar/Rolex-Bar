@@ -98,6 +98,22 @@
       <div class="mini-tabel" id="top5-tabel"></div>
       <div class="mini-tabel" id="betaling-tabel"></div>
     </div>
+    <div class="produkt-shitje-boks">
+      <div class="ps-header">
+        <h3>📦 Shitjet sipas produktit</h3>
+        <div class="ps-filter">
+          <input type="date" id="ps-fra" onchange="opdaterShitjetProdukt()">
+          <span style="color:var(--tekst-lys)">–</span>
+          <input type="date" id="ps-til" onchange="opdaterShitjetProdukt()">
+        </div>
+      </div>
+      <div class="ps-sort-bar">
+        <button class="ps-sort-btn aktiv" onclick="sorterShitjet('antal',this)">Antal ↓</button>
+        <button class="ps-sort-btn" onclick="sorterShitjet('xhiro',this)">Xhiro ↓</button>
+        <button class="ps-sort-btn" onclick="sorterShitjet('navn',this)">A–Z</button>
+      </div>
+      <div id="produkt-shitje-liste"></div>
+    </div>
   </div>
 
   <!-- HISTORIKU -->

@@ -358,7 +358,16 @@ function skiftTab(tab) {
   if(idx[tab]!==undefined) tabs[idx[tab]].classList.add('aktiv');
   document.getElementById(tab+'-side').classList.add('aktiv');
   if(tab==='aabne') renderAabneBorde();
-  if(tab==='omsaetning'){document.getElementById('periode-dato').value=sotDita();opdaterOmsaetning()}
+  if(tab==='omsaetning'){
+    document.getElementById('periode-dato').value=sotDita();
+    if(!document.getElementById('ps-fra').value){
+      const now=new Date();const y=now.getFullYear(),m=String(now.getMonth()+1).padStart(2,'0');
+      document.getElementById('ps-fra').value=`${y}-${m}-01`;
+      document.getElementById('ps-til').value=sotDita();
+    }
+    opdaterOmsaetning();
+    opdaterShitjetProdukt();
+  }
   if(tab==='historik') opdaterHistorik();
   if(tab==='ventende') genindlaesVentende();
   if(tab==='produkter'){
@@ -1310,30 +1319,43 @@ function printFature(){
 // XHIRO (OMSÆTNING)
 // =============================================
 function skiftPeriode(p,el){aktivPeriode=p;document.querySelectorAll('.periode-btn').forEach(b=>b.classList.remove('aktiv'));el.classList.add('aktiv');opdaterOmsaetning()}
-function opdaterOmsaetning(){
+async function opdaterOmsaetning(){
   const dato=document.getElementById('periode-dato').value||sotDita();
   const d=new Date(dato);
-  let rel=[],labels=[],data=[],titull='';
+  let fraStr,tilStr,labels=[],data=[],titull='';
   if(aktivPeriode==='dag'){
-    rel=ordrer.filter(o=>o.status==='betalt'&&o.oprettet.slice(0,10)===dato);
+    fraStr=dato+'T00:00:00';tilStr=dato+'T23:59:59';
     titull='Xhiro orë pas ore — '+d.toLocaleDateString('sq-AL');
+  } else if(aktivPeriode==='uge'){
+    const e=new Date(d);e.setDate(d.getDate()-((d.getDay()+6)%7));
+    const s=new Date(e);s.setDate(e.getDate()+6);
+    fraStr=e.toISOString().slice(0,10)+'T00:00:00';tilStr=s.toISOString().slice(0,10)+'T23:59:59';
+    titull='Xhiro ditore — Java '+(()=>{const d2=new Date(Date.UTC(e.getFullYear(),e.getMonth(),e.getDate()));d2.setUTCDate(d2.getUTCDate()+4-(d2.getUTCDay()||7));return Math.ceil(((d2-new Date(Date.UTC(d2.getUTCFullYear(),0,1)))/86400000+1)/7)})();
+  } else {
+    const v=d.getFullYear(),m=d.getMonth(),nd=new Date(v,m+1,0).getDate();
+    fraStr=`${v}-${String(m+1).padStart(2,'0')}-01T00:00:00`;
+    tilStr=`${v}-${String(m+1).padStart(2,'0')}-${String(nd).padStart(2,'0')}T23:59:59`;
+    titull='Xhiro mujore — '+d.toLocaleDateString('sq-AL',{month:'long',year:'numeric'});
+  }
+  const {data:rows,error}=await sb.from('ordrer').select('*,ordre_linjer(*)').eq('restaurant_id',RESTAURANT_ID).eq('status','betalt').gte('oprettet',fraStr).lte('oprettet',tilStr);
+  if(error){console.error('opdaterOmsaetning',error);return}
+  const rel=(rows||[]).map(o=>({...o,items:(o.ordre_linjer||[]).map(l=>({produkt_navn:l.navn,antal:l.antal,produkt_pris:l.pris}))}));
+  if(aktivPeriode==='dag'){
     const t={};for(let h=7;h<=22;h++)t[h]=0;
     rel.forEach(o=>{const h=new Date(o.oprettet).getHours();if(t[h]!==undefined)t[h]+=o.total});
     labels=Object.keys(t).map(h=>h+':00');data=Object.values(t);
   } else if(aktivPeriode==='uge'){
     const e=new Date(d);e.setDate(d.getDate()-((d.getDay()+6)%7));
-    titull='Xhiro ditore — Java '+(()=>{const d2=new Date(Date.UTC(e.getFullYear(),e.getMonth(),e.getDate()));d2.setUTCDate(d2.getUTCDate()+4-(d2.getUTCDay()||7));return Math.ceil(((d2-new Date(Date.UTC(d2.getUTCFullYear(),0,1)))/86400000+1)/7)})();
-    for(let i=0;i<7;i++){const g=new Date(e);g.setDate(e.getDate()+i);const ds=g.toISOString().slice(0,10);const dr=ordrer.filter(o=>o.status==='betalt'&&o.oprettet.slice(0,10)===ds);labels.push(g.toLocaleDateString('sq-AL',{weekday:'short',day:'numeric'}));data.push(dr.reduce((s,o)=>s+o.total,0));rel=[...rel,...dr]}
+    for(let i=0;i<7;i++){const g=new Date(e);g.setDate(e.getDate()+i);const ds=g.toISOString().slice(0,10);const dr=rel.filter(o=>o.oprettet.slice(0,10)===ds);labels.push(g.toLocaleDateString('sq-AL',{weekday:'short',day:'numeric'}));data.push(dr.reduce((s,o)=>s+o.total,0))}
   } else {
     const v=d.getFullYear(),m=d.getMonth(),nd=new Date(v,m+1,0).getDate();
-    titull='Xhiro mujore — '+d.toLocaleDateString('sq-AL',{month:'long',year:'numeric'});
-    for(let g=1;g<=nd;g++){const ds=`${v}-${String(m+1).padStart(2,'0')}-${String(g).padStart(2,'0')}`;const dr=ordrer.filter(o=>o.status==='betalt'&&o.oprettet.slice(0,10)===ds);labels.push(String(g));data.push(dr.reduce((s,o)=>s+o.total,0));rel=[...rel,...dr]}
+    for(let g=1;g<=nd;g++){const ds=`${v}-${String(m+1).padStart(2,'0')}-${String(g).padStart(2,'0')}`;const dr=rel.filter(o=>o.oprettet.slice(0,10)===ds);labels.push(String(g));data.push(dr.reduce((s,o)=>s+o.total,0))}
   }
   document.getElementById('chart-titel').textContent=titull;
   const xhiro=rel.reduce((s,o)=>s+o.total,0);
   const nt=rel.length;
   const snit=nt?xhiro/nt:0;
-  const tvsh=rel.reduce((s,o)=>s+o.moms,0);
+  const tvsh=rel.reduce((s,o)=>s+(o.moms||0),0);
   const pt={};rel.forEach(o=>o.items.forEach(i=>{pt[i.produkt_navn]=(pt[i.produkt_navn]||0)+i.antal}));
   const top=Object.entries(pt).sort((a,b)=>b[1]-a[1])[0];
   document.getElementById('kpi-grid').innerHTML=`
@@ -1349,6 +1371,45 @@ function opdaterOmsaetning(){
   const kesh=rel.filter(o=>o.betaling==='kontant').reduce((s,o)=>s+o.total,0);
   const karte=rel.filter(o=>o.betaling==='kort'||o.betaling==='mobil').reduce((s,o)=>s+o.total,0);
   document.getElementById('betaling-tabel').innerHTML=`<h3>Ndarja e pagesave</h3><div class="mt-raekke"><span>💵 Kesh</span><span>${euro(kesh)}</span></div><div class="mt-raekke"><span>💳 Kartë/Mobil</span><span>${euro(karte)}</span></div><div class="mt-raekke" style="font-weight:700"><span>Totali</span><span>${euro(xhiro)}</span></div>`;
+}
+
+// ─── PRODUKT-SHITJE ───────────────────────────────
+let _shitjetData=[];
+let _sortKey='antal';
+async function opdaterShitjetProdukt(){
+  const fra=document.getElementById('ps-fra').value;
+  const til=document.getElementById('ps-til').value;
+  const liste=document.getElementById('produkt-shitje-liste');
+  liste.innerHTML='<div class="ps-loading">Duke ngarkuar...</div>';
+  let q=sb.from('ordrer').select('ordre_linjer(navn,pris,antal)').eq('restaurant_id',RESTAURANT_ID).eq('status','betalt');
+  if(fra) q=q.gte('oprettet',fra+'T00:00:00');
+  if(til) q=q.lte('oprettet',til+'T23:59:59');
+  const {data,error}=await q;
+  if(error){liste.innerHTML='<div class="ps-loading" style="color:var(--roed)">Gabim gjatë ngarkimit</div>';return}
+  const agg={};
+  (data||[]).forEach(o=>(o.ordre_linjer||[]).forEach(l=>{
+    if(!agg[l.navn]) agg[l.navn]={namn:l.navn,antal:0,xhiro:0};
+    agg[l.navn].antal+=l.antal;
+    agg[l.navn].xhiro+=l.pris*l.antal;
+  }));
+  _shitjetData=Object.values(agg);
+  renderShitjet();
+}
+function renderShitjet(){
+  const liste=document.getElementById('produkt-shitje-liste');
+  if(!_shitjetData.length){liste.innerHTML='<div class="ps-loading">Nuk ka të dhëna për periudhën e zgjedhur</div>';return}
+  let sorted=[..._shitjetData];
+  if(_sortKey==='antal') sorted.sort((a,b)=>b.antal-a.antal);
+  else if(_sortKey==='xhiro') sorted.sort((a,b)=>b.xhiro-a.xhiro);
+  else sorted.sort((a,b)=>a.namn.localeCompare(b.namn));
+  liste.innerHTML='<div class="ps-raekke ps-header-row"><span>Produkti</span><span>Sasia</span><span>Xhiro</span></div>'+
+    sorted.map((p,i)=>`<div class="ps-raekke${i%2?'':' alt'}"><span class="ps-namn">${p.namn}</span><span class="ps-antal">${p.antal} cop.</span><span class="ps-xhiro">${euro(p.xhiro)}</span></div>`).join('');
+}
+function sorterShitjet(key,el){
+  _sortKey=key;
+  document.querySelectorAll('.ps-sort-btn').forEach(b=>b.classList.remove('aktiv'));
+  el.classList.add('aktiv');
+  renderShitjet();
 }
 function eksporterCSV(){
   let csv='Porosi,Data,Totali,Pagesa,Artikujt\n';
