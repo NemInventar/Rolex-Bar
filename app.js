@@ -149,10 +149,20 @@ let celebrationOrdreId = null;
 let undoOrdreId = null, undoTimer = null, undoSekundat = 0;
 
 // =============================================
+// SUPABASE
+// =============================================
+const SUPABASE_URL = 'https://tsaxlluggcxdrvapaypp.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRzYXhsbHVnZ2N4ZHJ2YXBheXBwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzNTU0MTAsImV4cCI6MjA5MzkzMTQxMH0.bIXF0dXrWSgtpYCpNzZz5Rh5BB_0R37dzNp_8jgFZGM';
+const RESTAURANT_ID = '0860de87-efd6-4ef4-b191-7635bc44e866';
+let sb; // assigned after DOM ready
+
+// =============================================
 // DATA
 // =============================================
-function initMenuData() {
-  if (localStorage.getItem('artizano_init')) return;
+async function initMenuData() {
+  const { data } = await sb.from('kategorier').select('id').eq('restaurant_id', RESTAURANT_ID).limit(1);
+  if (data && data.length > 0) return; // already initialized
+
   kategorier = [
     {id:'k1',navn:'🍕 Pizza',sort:1},{id:'k2',navn:'🥩 Mishërat',sort:2},
     {id:'k3',navn:'🔥 Qebapa',sort:3},{id:'k4',navn:'🍔 Burgera & Döner',sort:4},
@@ -255,18 +265,75 @@ function initMenuData() {
     {id:'p804',navn:'Laško',kategori_id:'k8',pris:1.50,ikon:'🍺',beskrivelse:'',udsolgt:false},
   ];
   ordrer = [];
-  gemData();
-  localStorage.setItem('artizano_init','1');
-}
-function gemData(){localStorage.setItem('artizano_kat',JSON.stringify(kategorier));localStorage.setItem('artizano_prod',JSON.stringify(produkter));localStorage.setItem('artizano_ordrer',JSON.stringify(ordrer))}
-function gemTavolina(){localStorage.setItem('artizano_tavolina',JSON.stringify(tavolina))}
-function loadData(){kategorier=JSON.parse(localStorage.getItem('artizano_kat')||'[]');produkter=JSON.parse(localStorage.getItem('artizano_prod')||'[]');ordrer=JSON.parse(localStorage.getItem('artizano_ordrer')||'[]');tavolina=JSON.parse(localStorage.getItem('artizano_tavolina')||'[]')}
 
-function initTavolinat(){
-  if(localStorage.getItem('artizano_tavolina')) return;
-  // 10 tavolina si parazgjedhje
-  tavolina=Array.from({length:10},(_,i)=>({id:'tv'+(i+1),nr:String(i+1),emri:'Tavolina '+(i+1)}));
-  gemTavolina();
+  const katRows = kategorier.map(k => ({ ...k, restaurant_id: RESTAURANT_ID }));
+  const prodRows = produkter.map(p => ({ ...p, restaurant_id: RESTAURANT_ID }));
+  await sb.from('kategorier').insert(katRows);
+  await sb.from('produkter').insert(prodRows);
+}
+function gemData() {
+  // fire-and-forget: renders use in-memory state already
+  _syncOrdrerToSupabase();
+}
+
+async function _syncOrdrerToSupabase() {
+  try {
+    for (const o of ordrer) {
+      const { ordre_linjer, log, items, kilde, kusuri, ...ordreRow } = o;
+      await sb.from('ordrer').upsert({ ...ordreRow, restaurant_id: RESTAURANT_ID });
+      if (items && items.length) {
+        const linjer = items.map(i => ({
+          ordre_id: o.id,
+          produkt_id: i.produkt_id,
+          navn: i.produkt_navn,
+          pris: i.produkt_pris,
+          antal: i.antal
+        }));
+        await sb.from('ordre_linjer').upsert(linjer);
+      }
+    }
+  } catch(e) { console.error('Supabase sync fejl:', e); }
+}
+
+function gemTavolina() {
+  _syncTavolinaToSupabase();
+}
+
+async function _syncTavolinaToSupabase() {
+  try {
+    const rows = tavolina.map(t => ({ ...t, restaurant_id: RESTAURANT_ID }));
+    await sb.from('tavolina').upsert(rows);
+  } catch(e) { console.error('Tavolina sync fejl:', e); }
+}
+
+async function loadData() {
+  const [katRes, prodRes, ordRes, tavRes] = await Promise.all([
+    sb.from('kategorier').select('*').eq('restaurant_id', RESTAURANT_ID).order('sort'),
+    sb.from('produkter').select('*').eq('restaurant_id', RESTAURANT_ID),
+    sb.from('ordrer').select('*, ordre_linjer(*)').eq('restaurant_id', RESTAURANT_ID).in('status',['aaben','ventende']).order('oprettet'),
+    sb.from('tavolina').select('*').eq('restaurant_id', RESTAURANT_ID)
+  ]);
+  kategorier = katRes.data || [];
+  produkter = prodRes.data || [];
+  ordrer = (ordRes.data || []).map(o => ({
+    ...o,
+    items: (o.ordre_linjer || []).map(l => ({
+      produkt_id: l.produkt_id,
+      produkt_navn: l.navn,
+      produkt_pris: l.pris,
+      antal: l.antal,
+      note: ''
+    })),
+    log: []
+  }));
+  tavolina = tavRes.data || [];
+}
+
+async function initTavolinat() {
+  const { data } = await sb.from('tavolina').select('id').eq('restaurant_id', RESTAURANT_ID).limit(1);
+  if (data && data.length > 0) return;
+  tavolina = Array.from({length:10},(_,i)=>({id:'tv'+(i+1), restaurant_id: RESTAURANT_ID, nr:String(i+1), emri:'Tavolina '+(i+1)}));
+  await sb.from('tavolina').insert(tavolina);
 }
 
 // =============================================
@@ -923,7 +990,9 @@ function shtoTavolinë(){
   const val=document.getElementById('tv-e-re').value.trim();
   if(!val) return;
   if(tavolina.some(t=>t.nr===val)){visToast(`Tavolina "${val}" ekziston tashmë!`,'gabim');return}
-  tavolina.push({id:'tv_'+unikID(),nr:val,emri:'Tavolina '+val});
+  const tv={id:'tv_'+unikID(),nr:val,emri:'Tavolina '+val};
+  tavolina.push(tv);
+  sb.from('tavolina').upsert({...tv, restaurant_id: RESTAURANT_ID}).then();
   gemTavolina();
   rifreshoTavolinaAdmin();
   renderTablePicker();
@@ -939,6 +1008,7 @@ function fshiTavolinë(id){
   if(zene){visToast(`Tavolina "${t.nr}" është e zënë!`,'gabim');return}
   if(!confirm(`Fshi Tavolinën "${t.nr}"?`)) return;
   tavolina=tavolina.filter(x=>x.id!==id);
+  sb.from('tavolina').delete().eq('id', id).then();
   gemTavolina();
   rifreshoTavolinaAdmin();
   renderTablePicker();
@@ -1331,8 +1401,8 @@ function ruajProdukt(){
   const id=document.getElementById('pm-id').value,emri=document.getElementById('pm-navn').value.trim(),cmimi=parseFloat(document.getElementById('pm-pris').value),kat=document.getElementById('pm-kategori').value,ikon=document.getElementById('pm-ikon').value.trim()||'🍽️',pershk=document.getElementById('pm-beskrivelse').value.trim(),mbaruar=document.getElementById('pm-udsolgt').checked;
   if(!emri){visToast('Shkruaj emrin e produktit','gabim');return}
   if(isNaN(cmimi)||cmimi<0){visToast('Çmim i pavlefshëm','gabim');return}
-  if(id){const i=produkter.findIndex(p=>p.id===id);produkter[i]={...produkter[i],navn:emri,pris:cmimi,kategori_id:kat,ikon,beskrivelse:pershk,udsolgt:mbaruar};visToast(`"${emri}" u ndryshua ✓`)}
-  else{produkter.push({id:unikID(),navn:emri,pris:cmimi,kategori_id:kat,ikon,beskrivelse:pershk,udsolgt:mbaruar});visToast(`"${emri}" u shtua ✓`)}
+  if(id){const i=produkter.findIndex(p=>p.id===id);produkter[i]={...produkter[i],navn:emri,pris:cmimi,kategori_id:kat,ikon,beskrivelse:pershk,udsolgt:mbaruar};sb.from('produkter').upsert({...produkter[i], restaurant_id: RESTAURANT_ID}).then();visToast(`"${emri}" u ndryshua ✓`)}
+  else{const prod={id:unikID(),navn:emri,pris:cmimi,kategori_id:kat,ikon,beskrivelse:pershk,udsolgt:mbaruar};produkter.push(prod);sb.from('produkter').upsert({...prod, restaurant_id: RESTAURANT_ID}).then();visToast(`"${emri}" u shtua ✓`)}
   gemData();mbyllModal('produkt-modal');renderProduktGrid();renderAdminProdukter();renderKategorier();
 }
 function fshiProdukt(){
@@ -1340,13 +1410,13 @@ function fshiProdukt(){
   const id=document.getElementById('pm-id').value;if(!id) return;
   const p=produkter.find(x=>x.id===id);
   if(!confirm(`Fshi "${p.navn}"?`)) return;
-  produkter=produkter.filter(x=>x.id!==id);gemData();mbyllModal('produkt-modal');renderProduktGrid();renderAdminProdukter();visToast(`"${p.navn}" u fshi`);
+  produkter=produkter.filter(x=>x.id!==id);sb.from('produkter').delete().eq('id', id).then();gemData();mbyllModal('produkt-modal');renderProduktGrid();renderAdminProdukter();visToast(`"${p.navn}" u fshi`);
 }
 function fshiProduktDirekt(id){
   if(!erAdmin){visToast('🔒 Keni nevojë për login Admin!','gabim');return}
   const p=produkter.find(x=>x.id===id);
   if(!confirm(`Fshi "${p.navn}"?`)) return;
-  produkter=produkter.filter(x=>x.id!==id);gemData();renderProduktGrid();renderAdminProdukter();visToast(`"${p.navn}" u fshi`);
+  produkter=produkter.filter(x=>x.id!==id);sb.from('produkter').delete().eq('id', id).then();gemData();renderProduktGrid();renderAdminProdukter();visToast(`"${p.navn}" u fshi`);
 }
 
 // =============================================
@@ -1360,9 +1430,9 @@ function hapKategoriModal(){
 function renderKatAdmin(){
   document.getElementById('kat-liste-admin').innerHTML=kategorier.map(k=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border)"><span style="font-weight:600">${k.navn}</span><div style="display:flex;gap:6px"><button onclick="riemertojKategorine('${k.id}')" style="padding:3px 10px;background:var(--brun);color:#fff;border:none;border-radius:5px;cursor:pointer;font-size:.75rem">Riemërto</button><button onclick="fshiKategorine('${k.id}')" style="padding:3px 10px;background:none;border:1px solid var(--roed);color:var(--roed);border-radius:5px;cursor:pointer;font-size:.75rem">Fshi</button></div></div>`).join('')||'<p style="color:var(--tekst-lys);font-size:.83rem">Nuk ka kategori</p>';
 }
-function shtoKategori(){if(!erAdmin){visToast('🔒 Keni nevojë për login Admin!','gabim');return}const emri=document.getElementById('ny-kat-navn').value.trim();if(!emri) return;kategorier.push({id:unikID(),navn:emri,sort:kategorier.length+1});gemData();renderKatAdmin();document.getElementById('ny-kat-navn').value='';renderKategorier();visToast(`Kategoria "${emri}" u shtua`)}
+function shtoKategori(){if(!erAdmin){visToast('🔒 Keni nevojë për login Admin!','gabim');return}const emri=document.getElementById('ny-kat-navn').value.trim();if(!emri) return;const kat={id:unikID(),navn:emri,sort:kategorier.length+1};kategorier.push(kat);sb.from('kategorier').upsert({...kat, restaurant_id: RESTAURANT_ID}).then();gemData();renderKatAdmin();document.getElementById('ny-kat-navn').value='';renderKategorier();visToast(`Kategoria "${emri}" u shtua`)}
 function riemertojKategorine(id){if(!erAdmin){visToast('🔒 Keni nevojë për login Admin!','gabim');return}const k=kategorier.find(x=>x.id===id);const e=prompt('Emri i ri:',k.navn);if(!e||e===k.navn) return;k.navn=e.trim();gemData();renderKatAdmin();renderKategorier();renderProduktGrid();renderAdminProdukter();visToast(`Kategoria u riemërtua`)}
-function fshiKategorine(id){if(!erAdmin){visToast('🔒 Keni nevojë për login Admin!','gabim');return}const k=kategorier.find(x=>x.id===id);if(!confirm(`Fshi kategorinë "${k.navn}"?`)) return;kategorier=kategorier.filter(x=>x.id!==id);produkter.forEach(p=>{if(p.kategori_id===id)p.kategori_id=''});gemData();renderKatAdmin();renderKategorier();renderProduktGrid();renderAdminProdukter()}
+function fshiKategorine(id){if(!erAdmin){visToast('🔒 Keni nevojë për login Admin!','gabim');return}const k=kategorier.find(x=>x.id===id);if(!confirm(`Fshi kategorinë "${k.navn}"?`)) return;kategorier=kategorier.filter(x=>x.id!==id);produkter.forEach(p=>{if(p.kategori_id===id)p.kategori_id=''});sb.from('kategorier').delete().eq('id', id).then();gemData();renderKatAdmin();renderKategorier();renderProduktGrid();renderAdminProdukter()}
 
 // =============================================
 // RAPORT Z
@@ -1395,10 +1465,13 @@ function opdaterUr(){
 // =============================================
 // INIT
 // =============================================
-function init(){
-  initMenuData();
-  initTavolinat();
-  loadData();
+document.addEventListener('DOMContentLoaded', async () => {
+  sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  await loadData();
+  await initMenuData();
+  await initTavolinat();
+  // After init, reload to get any freshly inserted rows
+  await loadData();
   renderKategorier();
   renderProduktGrid();
   renderTablePicker();
@@ -1411,7 +1484,12 @@ function init(){
   opdaterUr();
   setInterval(opdaterUr,1000);
   setInterval(()=>{if(document.getElementById('aabne-side').classList.contains('aktiv'))renderAabneBorde();opdaterAabneBadge()},30000);
-  setInterval(()=>{loadData();genindlaesVentende()},5000);
-}
-window.addEventListener('DOMContentLoaded',init);
-window.addEventListener('storage',()=>{loadData();genindlaesVentende();opdaterAabneBadge()});
+  setInterval(()=>{loadData().then(()=>{genindlaesVentende();opdaterAabneBadge()})},30000);
+
+  // Realtime subscription for live order updates
+  sb.channel('ordrer-live')
+    .on('postgres_changes',
+        {event:'*', schema:'public', table:'ordrer', filter:`restaurant_id=eq.${RESTAURANT_ID}`},
+        () => loadData().then(() => { renderAabneBorde(); genindlaesVentende(); opdaterAabneBadge(); }))
+    .subscribe();
+});
