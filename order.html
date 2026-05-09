@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="sq">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Artizano — Porosi</title>
+<meta name="theme-color" content="#3B1F0E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Porosi">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  :root{
+    --brun:#3B1F0E;--guld:#C9963B;--guld-lys:#E8B96A;
+    --bg:#FAF6F1;--bg2:#F0E8DC;--border:#E0D4C4;
+    --tekst:#2C1A0E;--tekst-lys:#8B6D52;
+    --groen:#27AE60;--roed:#C0392B;
+  }
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--tekst);min-height:100dvh;display:flex;flex-direction:column}
+
+  /* HEADER */
+  #header{background:var(--brun);color:#fff;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+  #header h1{font-size:1.1rem;font-weight:700;letter-spacing:.5px}
+  #header h1 span{color:var(--guld-lys)}
+  #kurv-badge{background:var(--guld);color:var(--brun);border-radius:99px;font-size:.75rem;font-weight:700;padding:2px 8px;min-width:24px;text-align:center;display:none}
+
+  /* BORD PICKER */
+  #bord-sektion{background:#fff;border-bottom:1px solid var(--border);padding:10px 14px}
+  #bord-sektion label{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--tekst-lys);display:block;margin-bottom:6px}
+  #bord-grid{display:flex;flex-wrap:wrap;gap:6px}
+  .bord-btn{padding:7px 13px;border:2px solid var(--border);border-radius:8px;background:#fff;font-size:.85rem;font-weight:600;color:var(--tekst);cursor:pointer;transition:all .15s}
+  .bord-btn.aktiv{background:var(--brun);border-color:var(--brun);color:#fff}
+
+  /* KATEGORI BAR */
+  #kat-bar{display:flex;gap:6px;overflow-x:auto;padding:10px 14px;background:#fff;border-bottom:1px solid var(--border);scrollbar-width:none}
+  #kat-bar::-webkit-scrollbar{display:none}
+  .kat-btn{flex-shrink:0;padding:6px 12px;border-radius:99px;border:1.5px solid var(--border);background:#fff;font-size:.8rem;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .15s}
+  .kat-btn.aktiv{background:var(--brun);border-color:var(--brun);color:#fff}
+
+  /* PRODUKT GRID */
+  #prod-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;padding:12px 14px;flex:1;align-content:start}
+  .pk{background:#fff;border:1.5px solid var(--border);border-radius:12px;padding:12px 10px;text-align:center;cursor:pointer;transition:all .15s;position:relative;user-select:none}
+  .pk:active{transform:scale(.96);background:var(--bg2)}
+  .pk.udsolgt{opacity:.45;pointer-events:none}
+  .pk-ikon{font-size:1.8rem;margin-bottom:5px}
+  .pk-navn{font-size:.78rem;font-weight:600;line-height:1.3;margin-bottom:4px}
+  .pk-pris{font-size:.8rem;color:var(--guld);font-weight:700}
+  .pk-udsolgt-tag{position:absolute;top:6px;right:6px;background:var(--roed);color:#fff;font-size:.6rem;font-weight:700;padding:2px 5px;border-radius:4px}
+
+  /* SIZE MODAL */
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:none;align-items:flex-end}
+  .overlay.vis{display:flex}
+  .sheet{background:#fff;border-radius:18px 18px 0 0;padding:20px 16px 30px;width:100%;max-height:80dvh;overflow-y:auto}
+  .sheet h3{font-size:1rem;font-weight:700;margin-bottom:14px;text-align:center}
+  .size-btn{width:100%;display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;background:#fff;font-size:.9rem;font-weight:600;cursor:pointer;margin-bottom:8px}
+  .size-btn:active{background:var(--bg2)}
+  .size-btn[disabled]{opacity:.4;pointer-events:none}
+  .size-m{width:30px;height:30px;border-radius:50%;background:var(--brun);color:#fff;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700}
+  .size-pris{color:var(--guld);font-weight:700}
+  .sheet-annulo{width:100%;padding:12px;border:none;border-radius:10px;background:var(--bg2);font-size:.9rem;font-weight:600;cursor:pointer;margin-top:4px}
+
+  /* KURV BOTTOM SHEET */
+  #kurv-bar{position:sticky;bottom:0;background:var(--brun);color:#fff;padding:14px 16px;display:none;align-items:center;justify-content:space-between;gap:12px}
+  #kurv-bar.vis{display:flex}
+  #kurv-info{font-size:.85rem}
+  #kurv-antal{font-weight:700;font-size:1rem}
+  #kurv-total-val{color:var(--guld-lys);font-weight:600}
+  #btn-vis-kurv{background:var(--guld);color:var(--brun);border:none;border-radius:10px;padding:10px 18px;font-size:.9rem;font-weight:700;cursor:pointer;flex-shrink:0}
+
+  /* KURV SHEET */
+  #kurv-sheet .sheet{padding-bottom:20px}
+  .ki{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
+  .ki-navn{flex:1;font-size:.85rem;font-weight:600}
+  .ki-ctrl{display:flex;align-items:center;gap:8px}
+  .ki-btn{width:28px;height:28px;border-radius:50%;border:1.5px solid var(--border);background:#fff;font-size:1rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1}
+  .ki-antal{min-width:20px;text-align:center;font-weight:700;font-size:.9rem}
+  .ki-pris{font-size:.85rem;color:var(--guld);font-weight:700;min-width:55px;text-align:right}
+  .kurv-total{display:flex;justify-content:space-between;padding:12px 0 0;font-weight:700;font-size:.95rem}
+  .kurv-total span:last-child{color:var(--guld)}
+  #noter-inp{width:100%;margin:12px 0 0;padding:10px 12px;border:1.5px solid var(--border);border-radius:9px;font-size:.88rem;font-family:inherit}
+  #btn-dergo{width:100%;margin-top:14px;padding:14px;background:var(--groen);color:#fff;border:none;border-radius:12px;font-size:1rem;font-weight:700;cursor:pointer;letter-spacing:.3px}
+  #btn-dergo:disabled{background:#aaa;cursor:default}
+
+  /* KONFIRMIM */
+  #konfirmim{display:none;position:fixed;inset:0;background:var(--bg);flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px;z-index:300}
+  #konfirmim.vis{display:flex}
+  .konf-ikon{font-size:4rem;margin-bottom:16px}
+  .konf-titull{font-size:1.4rem;font-weight:700;margin-bottom:8px}
+  .konf-sub{color:var(--tekst-lys);font-size:.9rem;margin-bottom:28px}
+  #btn-porosi-re{padding:13px 28px;background:var(--brun);color:#fff;border:none;border-radius:12px;font-size:.95rem;font-weight:700;cursor:pointer}
+
+  /* LOADING */
+  #loading{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:12px;color:var(--tekst-lys)}
+  .spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--guld);border-radius:50%;animation:spin .8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* TOAST */
+  #toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--brun);color:#fff;padding:10px 20px;border-radius:99px;font-size:.85rem;font-weight:600;opacity:0;transition:all .3s;z-index:500;white-space:nowrap}
+  #toast.vis{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<div id="header">
+  <h1>Artizano <span>Porosi</span></h1>
+  <div id="kurv-badge">0</div>
+</div>
+
+<div id="loading"><div class="spinner"></div><span>Duke ngarkuar...</span></div>
+
+<div id="app" style="display:none;flex:1;flex-direction:column;display:none">
+  <div id="bord-sektion">
+    <label>🪑 Zgjidh tavolinën</label>
+    <div id="bord-grid"></div>
+  </div>
+  <div id="kat-bar"></div>
+  <div id="prod-grid"></div>
+</div>
+
+<div id="kurv-bar">
+  <div id="kurv-info">
+    <div id="kurv-antal">0 artikuj</div>
+    <div id="kurv-total-val">0,00 €</div>
+  </div>
+  <button id="btn-vis-kurv" onclick="hapKurvSheet()">🛒 Shiko shportën</button>
+</div>
+
+<!-- SIZE SHEET -->
+<div class="overlay" id="size-overlay" onclick="if(event.target===this)this.classList.remove('vis')">
+  <div class="sheet">
+    <h3 id="size-titull">Zgjidh madhësinë</h3>
+    <div id="size-opsionet"></div>
+    <button class="sheet-annulo" onclick="document.getElementById('size-overlay').classList.remove('vis')">Anulo</button>
+  </div>
+</div>
+
+<!-- KURV SHEET -->
+<div class="overlay" id="kurv-sheet" onclick="if(event.target===this)this.classList.remove('vis')">
+  <div class="sheet">
+    <h3>🛒 Shporta juaj</h3>
+    <div id="kurv-liste"></div>
+    <div class="kurv-total"><span>Totali</span><span id="kurv-total-sheet">0,00 €</span></div>
+    <input type="text" id="noter-inp" placeholder="📝 Shënim (pa qepë, alergjia...)">
+    <button id="btn-dergo" onclick="dergoBestillim()" disabled>✓ Dërgo porosinë</button>
+  </div>
+</div>
+
+<!-- KONFIRMIM -->
+<div id="konfirmim">
+  <div class="konf-ikon">✅</div>
+  <div class="konf-titull">Porosi u dërgua!</div>
+  <div class="konf-sub" id="konf-sub">Tavolina — • Porosi #—</div>
+  <button id="btn-porosi-re" onclick="porosiRe()">+ Porosi e re</button>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const SUPABASE_URL = 'https://tsaxlluggcxdrvapaypp.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRzYXhsbHVnZ2N4ZHJ2YXBheXBwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzNTU0MTAsImV4cCI6MjA5MzkzMTQxMH0.bIXF0dXrWSgtpYCpNzZz5Rh5BB_0R37dzNp_8jgFZGM';
+const RESTAURANT_ID = '0860de87-efd6-4ef4-b191-7635bc44e866';
+
+let sb, kategorier=[], produkter=[], tavolina=[];
+let kurv=[], aktivKat='alle', valgBord=null;
+
+function euro(v){return Number(v).toFixed(2).replace('.',',')+' €'}
+function unikID(){return 'id_'+Date.now()+'_'+Math.random().toString(36).slice(2,7)}
+function visToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('vis');setTimeout(()=>t.classList.remove('vis'),2500)}
+
+function emriBaze(emri){return emri.replace(/\s*\([SML]\)\s*$/,'').trim()}
+function madhesia(emri){const m=emri.match(/\(([SML])\)\s*$/);return m?m[1]:null}
+
+// ── LOAD ──
+async function init(){
+  sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  const [katRes, prodRes, tavRes] = await Promise.all([
+    sb.from('kategorier').select('*').eq('restaurant_id',RESTAURANT_ID).order('sort'),
+    sb.from('produkter').select('*').eq('restaurant_id',RESTAURANT_ID),
+    sb.from('tavolina').select('*').eq('restaurant_id',RESTAURANT_ID)
+  ]);
+  kategorier = katRes.data || [];
+  produkter  = prodRes.data || [];
+  tavolina   = tavRes.data || [];
+
+  document.getElementById('loading').style.display='none';
+  const app=document.getElementById('app');
+  app.style.display='flex';
+  app.style.flexDirection='column';
+  app.style.flex='1';
+
+  renderBorde();
+  renderKat();
+  renderGrid();
+}
+
+// ── BORDE ──
+function renderBorde(){
+  const grid=document.getElementById('bord-grid');
+  grid.innerHTML=tavolina.map(t=>`
+    <button class="bord-btn${valgBord===t.nr?' aktiv':''}" onclick="valgBordFn('${t.nr}')">${t.nr}</button>
+  `).join('');
+}
+function valgBordFn(nr){
+  valgBord = valgBord===nr ? null : nr;
+  renderBorde();
+  opdaterKurvBar();
+}
+
+// ── KATEGORI ──
+function renderKat(){
+  const bar=document.getElementById('kat-bar');
+  bar.innerHTML=`<button class="kat-btn${aktivKat==='alle'?' aktiv':''}" onclick="filtrerKat('alle')">Të gjitha</button>`+
+    kategorier.map(k=>`<button class="kat-btn${aktivKat===k.id?' aktiv':''}" onclick="filtrerKat('${k.id}')">${k.navn}</button>`).join('');
+}
+function filtrerKat(id){aktivKat=id;renderKat();renderGrid()}
+
+// ── PRODUKT GRID ──
+function renderGrid(){
+  const grid=document.getElementById('prod-grid');
+  const liste=aktivKat==='alle'?produkter:produkter.filter(p=>p.kategori_id===aktivKat);
+  if(!liste.length){grid.innerHTML='<p style="color:var(--tekst-lys);padding:20px;grid-column:1/-1">Nuk ka produkte.</p>';return}
+
+  // Gruopo S/M/L
+  const grupe={};
+  liste.forEach(p=>{
+    const baze=emriBaze(p.navn);
+    const k=baze+'||'+p.kategori_id;
+    if(!grupe[k]) grupe[k]={baze,ikon:p.ikon||'🍽️',produktet:[]};
+    grupe[k].produktet.push(p);
+  });
+  const renditje={S:0,M:1,L:2};
+  Object.values(grupe).forEach(g=>g.produktet.sort((a,b)=>(renditje[madhesia(a.navn)]??9)-(renditje[madhesia(b.navn)]??9)));
+
+  grid.innerHTML=Object.values(grupe).map(g=>{
+    if(g.produktet.length===1){
+      const p=g.produktet[0];
+      return `<div class="pk${p.udsolgt?' udsolgt':''}" onclick="shtoNe('${p.id}')">
+        <div class="pk-ikon">${p.ikon||'🍽️'}</div>
+        <div class="pk-navn">${p.navn}</div>
+        <div class="pk-pris">${euro(p.pris)}</div>
+        ${p.udsolgt?'<div class="pk-udsolgt-tag">MBARUAR</div>':''}
+      </div>`;
+    }
+    const cmin=Math.min(...g.produktet.map(p=>p.pris));
+    const cmax=Math.max(...g.produktet.map(p=>p.pris));
+    const ids=g.produktet.map(p=>p.id).join(',');
+    return `<div class="pk" onclick="hapSize('${ids}')">
+      <div class="pk-ikon">${g.ikon}</div>
+      <div class="pk-navn">${g.baze}</div>
+      <div class="pk-pris">${cmin===cmax?euro(cmin):euro(cmin)+'–'+euro(cmax)}</div>
+      <div style="display:flex;justify-content:center;gap:4px;margin-top:4px">
+        ${g.produktet.map(p=>`<span style="background:var(--brun);color:#fff;border-radius:50%;width:18px;height:18px;font-size:.6rem;font-weight:700;display:inline-flex;align-items:center;justify-content:center">${madhesia(p.navn)||'?'}</span>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── SIZE PICKER ──
+function hapSize(idsStr){
+  const prods=idsStr.split(',').map(id=>produkter.find(p=>p.id===id)).filter(Boolean);
+  document.getElementById('size-titull').textContent=emriBaze(prods[0].navn)+' — Zgjidh madhësinë';
+  document.getElementById('size-opsionet').innerHTML=prods.map(p=>{
+    const m=madhesia(p.navn)||p.navn;
+    const etiket={S:'E Vogël',M:'E Mesme',L:'E Madhe'}[m]||m;
+    return `<button class="size-btn" onclick="shtoNe('${p.id}');document.getElementById('size-overlay').classList.remove('vis')" ${p.udsolgt?'disabled':''}>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="size-m">${m}</div>
+        <span>${etiket}${p.udsolgt?' · <span style="color:var(--roed);font-size:.75rem">Mbaruar</span>':''}</span>
+      </div>
+      <span class="size-pris">${euro(p.pris)}</span>
+    </button>`;
+  }).join('');
+  document.getElementById('size-overlay').classList.add('vis');
+}
+
+// ── SHPORTA ──
+function shtoNe(prodId){
+  const prod=produkter.find(p=>p.id===prodId);
+  if(!prod||prod.udsolgt) return;
+  const ekz=kurv.find(i=>i.produkt_id===prodId);
+  if(ekz){ekz.antal++}else{kurv.push({produkt_id:prodId,produkt_navn:prod.navn,produkt_pris:prod.pris,antal:1})}
+  opdaterKurvBar();
+  visToast(prod.navn+' u shtua ✓');
+}
+function ndryshoAntal(idx,delta){
+  kurv[idx].antal+=delta;
+  if(kurv[idx].antal<=0) kurv.splice(idx,1);
+  renderKurvSheet();
+  opdaterKurvBar();
+}
+
+function totalKurv(){return kurv.reduce((s,i)=>s+i.produkt_pris*i.antal,0)}
+
+function opdaterKurvBar(){
+  const bar=document.getElementById('kurv-bar');
+  const badge=document.getElementById('kurv-badge');
+  const totalAntal=kurv.reduce((s,i)=>s+i.antal,0);
+  const tot=totalKurv();
+  if(kurv.length){
+    bar.classList.add('vis');
+    badge.style.display='block';
+    badge.textContent=totalAntal;
+    document.getElementById('kurv-antal').textContent=totalAntal+' artikuj';
+    document.getElementById('kurv-total-val').textContent=euro(tot);
+  } else {
+    bar.classList.remove('vis');
+    badge.style.display='none';
+  }
+  // opdater send-knap i sheet
+  const btn=document.getElementById('btn-dergo');
+  if(btn) btn.disabled=!kurv.length||!valgBord;
+}
+
+function hapKurvSheet(){
+  renderKurvSheet();
+  document.getElementById('kurv-sheet').classList.add('vis');
+}
+
+function renderKurvSheet(){
+  const liste=document.getElementById('kurv-liste');
+  if(!kurv.length){liste.innerHTML='<p style="color:var(--tekst-lys);padding:10px 0;font-size:.85rem">Shporta është bosh.</p>';return}
+  liste.innerHTML=kurv.map((i,idx)=>`
+    <div class="ki">
+      <div class="ki-navn">${i.produkt_navn}</div>
+      <div class="ki-ctrl">
+        <button class="ki-btn" onclick="ndryshoAntal(${idx},-1)">−</button>
+        <span class="ki-antal">${i.antal}</span>
+        <button class="ki-btn" onclick="ndryshoAntal(${idx},1)">+</button>
+      </div>
+      <div class="ki-pris">${euro(i.produkt_pris*i.antal)}</div>
+    </div>
+  `).join('');
+  document.getElementById('kurv-total-sheet').textContent=euro(totalKurv());
+  const btn=document.getElementById('btn-dergo');
+  btn.disabled=!kurv.length||!valgBord;
+  if(!valgBord) btn.textContent='⚠ Zgjidh tavolinën së pari';
+  else btn.textContent='✓ Dërgo porosinë te tavolina '+valgBord;
+}
+
+// ── DËRGO ──
+async function dergoBestillim(){
+  if(!kurv.length||!valgBord) return;
+  const btn=document.getElementById('btn-dergo');
+  btn.disabled=true;
+  btn.textContent='Duke dërguar...';
+
+  try {
+    // Merr numrin max të porosisë
+    const {data:maxRes} = await sb.from('ordrer').select('ordre_nummer').eq('restaurant_id',RESTAURANT_ID).order('ordre_nummer',{ascending:false}).limit(1);
+    const nextNr = maxRes&&maxRes.length ? maxRes[0].ordre_nummer+1 : 1001;
+
+    const total = parseFloat(totalKurv().toFixed(2));
+    const note  = document.getElementById('noter-inp').value.trim();
+    const ordreId = unikID();
+
+    const {error:ordErr} = await sb.from('ordrer').insert({
+      id: ordreId,
+      restaurant_id: RESTAURANT_ID,
+      ordre_nummer: nextNr,
+      status: 'ventende',
+      bord: valgBord,
+      note: note||null,
+      betaling: null,
+      subtotal: total,
+      moms: parseFloat((total*0.18).toFixed(2)),
+      total,
+      oprettet: new Date().toISOString(),
+      betalt: null
+    });
+    if(ordErr) throw ordErr;
+
+    const linjer=kurv.map(i=>({
+      ordre_id: ordreId,
+      produkt_id: i.produkt_id,
+      navn: i.produkt_navn,
+      pris: i.produkt_pris,
+      antal: i.antal
+    }));
+    const {error:linjeErr} = await sb.from('ordre_linjer').insert(linjer);
+    if(linjeErr) throw linjeErr;
+
+    // Sukses
+    document.getElementById('kurv-sheet').classList.remove('vis');
+    document.getElementById('konf-sub').textContent=`Tavolina ${valgBord} • Porosi #${nextNr} • ${euro(total)}`;
+    document.getElementById('konfirmim').classList.add('vis');
+
+  } catch(e) {
+    console.error(e);
+    visToast('❌ Gabim! Provo sërish.');
+    btn.disabled=false;
+    btn.textContent='✓ Dërgo porosinë';
+  }
+}
+
+function porosiRe(){
+  kurv=[];
+  valgBord=null;
+  document.getElementById('noter-inp').value='';
+  document.getElementById('konfirmim').classList.remove('vis');
+  opdaterKurvBar();
+  renderBorde();
+  renderGrid();
+  window.scrollTo(0,0);
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

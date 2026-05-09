@@ -1236,11 +1236,12 @@ function genindlaesVentende(){
 function aprovoOrdren(id){
   const o=ordrer.find(x=>x.id===id);
   if(!o) return;
-  o.status='betalt';o.betalt=new Date().toISOString();o.betaling='mobil';
+  o.status='aaben';
   gemData();
-  hapFature(o);
+  renderAabneBorde();
+  opdaterAabneBadge();
   genindlaesVentende();
-  visToast(`Porosi #${o.ordre_nummer} u aprovua ✓`);
+  visToast(`Porosi #${o.ordre_nummer} u aprovua ✓ — Tavolina ${o.bord}`);
 }
 function refuzoOrdren(id){
   if(!confirm('Refuzo këtë porosi?')) return;
