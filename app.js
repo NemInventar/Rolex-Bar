@@ -1227,7 +1227,7 @@ function genindlaesVentende(){
       <div class="ok-total">Totali: ${euro(o.total)}</div>
     </div>
     <div class="ok-btns">
-      <button class="ok-godkend" onclick="aprovoOrdren('${o.id}')">✓ Aprovo & Printo</button>
+      <button class="ok-godkend" onclick="aprovoOrdren('${o.id}')">✓ Aprovo</button>
       <button class="ok-afvis" onclick="refuzoOrdren('${o.id}')">✕ Refuzo</button>
     </div>
   </div>`).join('')}</div>`;
