@@ -89,6 +89,23 @@
   }
   .bord-btn.aktiv::after{opacity:.6;color:#fff}
 
+  /* ── ZONE TABS ── */
+  #zone-tabs{
+    display:grid;grid-template-columns:1fr 1fr;
+    gap:8px;margin-bottom:14px;
+  }
+  .zone-tab{
+    padding:13px 10px;border:2px solid var(--border);
+    border-radius:14px;background:var(--bg);
+    font-size:.9rem;font-weight:700;font-family:inherit;
+    cursor:pointer;transition:all .15s;color:var(--tekst-lys);
+    display:flex;align-items:center;justify-content:center;gap:7px;
+  }
+  .zone-tab.aktiv{
+    background:var(--brun);border-color:var(--brun);color:#fff;
+    box-shadow:0 3px 12px rgba(26,10,5,.25);
+  }
+
   /* ── KATEGORI BAR ── */
   #kat-bar{
     display:flex;gap:7px;overflow-x:auto;
@@ -307,6 +324,10 @@
 <div id="app" style="display:none;flex:1;flex-direction:column;display:none">
   <div id="bord-sektion">
     <label>🪑 Zgjidh tavolinën</label>
+    <div id="zone-tabs">
+      <button class="zone-tab aktiv" onclick="skiftZone('brendshëm',this)">🏠 Brendshëm</button>
+      <button class="zone-tab" onclick="skiftZone('terasa',this)">🌿 Terasa</button>
+    </div>
     <div id="bord-grid"></div>
   </div>
   <div id="kat-bar"></div>
@@ -357,7 +378,7 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const RESTAURANT_ID = '0860de87-efd6-4ef4-b191-7635bc44e866';
 
 let sb, kategorier=[], produkter=[], tavolina=[];
-let kurv=[], aktivKat='alle', valgBord=null;
+let kurv=[], aktivKat='alle', valgBord=null, aktivZone='brendshëm';
 
 function euro(v){return Number(v).toFixed(2).replace('.',',')+' €'}
 function unikID(){return 'id_'+Date.now()+'_'+Math.random().toString(36).slice(2,7)}
@@ -390,10 +411,26 @@ async function init(){
 }
 
 // ── BORDE ──
+function erTerasa(t){ return t.nr.startsWith('T'); }
+
+function skiftZone(zone, el){
+  aktivZone = zone;
+  document.querySelectorAll('.zone-tab').forEach(b=>b.classList.remove('aktiv'));
+  el.classList.add('aktiv');
+  // Nulstil bordvalg hvis det valgte bord er i den anden zone
+  if(valgBord){
+    const t=tavolina.find(x=>x.nr===valgBord);
+    if(t && erTerasa(t) !== (zone==='terasa')){ valgBord=null; opdaterKurvBar(); }
+  }
+  renderBorde();
+}
+
 function renderBorde(){
   const grid=document.getElementById('bord-grid');
-  grid.innerHTML=tavolina.map(t=>`
-    <button class="bord-btn${valgBord===t.nr?' aktiv':''}" onclick="valgBordFn('${t.nr}')">${t.nr}</button>
+  const liste=tavolina.filter(t=> aktivZone==='terasa' ? erTerasa(t) : !erTerasa(t));
+  const visNr=t=> aktivZone==='terasa' ? t.nr.slice(1) : t.nr; // vis "1" i stedet for "T1" på terasa
+  grid.innerHTML=liste.map(t=>`
+    <button class="bord-btn${valgBord===t.nr?' aktiv':''}" onclick="valgBordFn('${t.nr}')">${visNr(t)}</button>
   `).join('');
 }
 function valgBordFn(nr){

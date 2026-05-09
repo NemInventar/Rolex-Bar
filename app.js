@@ -330,7 +330,10 @@ async function loadData() {
 async function initTavolinat() {
   const { data } = await sb.from('tavolina').select('id').eq('restaurant_id', RESTAURANT_ID).limit(1);
   if (data && data.length > 0) return;
-  tavolina = Array.from({length:10},(_,i)=>({id:'tv'+(i+1), restaurant_id: RESTAURANT_ID, nr:String(i+1), emri:'Tavolina '+(i+1)}));
+  tavolina = [
+    ...Array.from({length:15},(_,i)=>({id:'tv'+(i+1), restaurant_id:RESTAURANT_ID, nr:String(i+1), emri:'Tavolina '+(i+1)})),
+    ...Array.from({length:7},(_,i)=>({id:'tvt'+(i+1), restaurant_id:RESTAURANT_ID, nr:'T'+(i+1), emri:'Terasa '+(i+1)}))
+  ];
   await sb.from('tavolina').insert(tavolina);
 }
 
