@@ -1,0 +1,36 @@
+# Environment
+.env
+.env.local
+.env.*.local
+*.key
+*.pem
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*~
+
+# Node (i tilfælde af at vi tilføjer build-tools senere)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Build output
+dist/
+build/
+.next/
+.vercel/
+
+# Logs
+*.log
+
+# Backup af original — kan slettes når split er verificeret
+pos.html.bak

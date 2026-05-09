@@ -1,0 +1,20 @@
+{
+  "name": "Artizano POS",
+  "short_name": "Artizano",
+  "description": "Point of Sale për Artizano — Eat & More",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#3B1F0E",
+  "theme_color": "#C9963B",
+  "lang": "sq",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

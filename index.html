@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="sq">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Artizano POS</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<meta name="theme-color" content="#3B1F0E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Artizano">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="header">
+  <h1>Artizano <span>POS</span></h1>
+  <div style="display:flex;align-items:center;gap:14px">
+    <div id="clock"></div>
+    <button id="admin-btn" onclick="toggleAdmin()">🔒 Hyr</button>
+  </div>
+</div>
+
+<div id="tabs">
+  <div class="tab aktiv" onclick="skiftTab('pos')">🛒 Arkë</div>
+  <div class="tab" onclick="skiftTab('aabne')" id="tab-aabne">🍽️ Tavolinat</div>
+  <div class="tab" onclick="skiftTab('ventende')" id="tab-ventende">📱 Mobil</div>
+  <div class="tab" onclick="skiftTab('omsaetning')">📊 Xhiro</div>
+  <div class="tab" onclick="skiftTab('historik')">📋 Historiku</div>
+  <div class="tab" onclick="skiftTab('produkter')">⚙️ Produktet</div>
+  <div class="tab" onclick="hapZRaport()" style="margin-left:auto">📄 Raport Z</div>
+</div>
+
+<div id="main">
+
+  <!-- ARKË -->
+  <div class="side aktiv" id="pos-side">
+    <div id="produkter-panel">
+      <div id="kategori-bar"></div>
+      <div id="produkt-grid"></div>
+    </div>
+    <div id="kurv-panel">
+      <div id="kurv-header"><h3>🛒 Porosi aktive</h3></div>
+      <div id="kurv-liste"><div class="kurv-tom">Shporta është bosh.<br>Trokitni mbi një produkt.</div></div>
+      <div id="kurv-bund">
+        <div class="total-linje hoved"><span>Totali</span><span id="k-total">0,00 €</span></div>
+        <label class="bord-label">🪑 Zgjidh tavolinën</label>
+        <div class="table-picker" id="table-picker"></div>
+        <input type="text" class="bord-input" id="bord-felt" placeholder="ose shkruaj numrin..." oninput="onBordInput(this)">
+        <div id="bord-gabim" style="display:none;font-size:.76rem;color:var(--roed);font-weight:600;margin-top:4px;padding:5px 8px;background:#FADBD8;border-radius:6px"></div>
+        <label class="bord-label">📝 Shënim</label>
+        <input type="text" class="bord-input" id="noter-felt" placeholder="pa qepë, alergjia..." style="margin-bottom:0">
+        <button id="btn-opret" onclick="opretBestilling()" disabled>🍽️ Krijo porosinë</button>
+        <button id="annuller-btn" onclick="rydKurv()">✕ Pastro shportën</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAVOLINAT -->
+  <div class="side" id="aabne-side">
+    <div class="side-header">
+      <h2>🍽️ Të gjitha tavolinat</h2>
+      <div style="display:flex;gap:8px">
+        <button class="tilfoej-btn" onclick="hapTavolinaModal()" style="font-size:.8rem;padding:7px 14px">⚙️ Menaxho</button>
+        <button class="eksport-btn" onclick="renderAabneBorde()">↻ Rifresko</button>
+      </div>
+    </div>
+    <div id="aabne-indhold"></div>
+  </div>
+
+  <!-- MOBIL POROSI -->
+  <div class="side" id="ventende-side">
+    <div class="side-header">
+      <h2>📱 Porosi nga Mobili</h2>
+      <button class="eksport-btn" onclick="genindlaesVentende()">↻ Rifresko</button>
+    </div>
+    <div id="ventende-indhold"></div>
+  </div>
+
+  <!-- XHIRO -->
+  <div class="side" id="omsaetning-side">
+    <div class="side-header">
+      <h2>📊 Xhiro</h2>
+      <button class="eksport-btn" onclick="eksporterCSV()">⬇ Eksporto CSV</button>
+    </div>
+    <div class="periode-bar">
+      <button class="periode-btn aktiv" onclick="skiftPeriode('dag',this)">Ditë</button>
+      <button class="periode-btn" onclick="skiftPeriode('uge',this)">Javë</button>
+      <button class="periode-btn" onclick="skiftPeriode('maaned',this)">Muaj</button>
+      <input type="date" class="dato-felt" id="periode-dato" onchange="opdaterOmsaetning()">
+    </div>
+    <div class="kpi-grid" id="kpi-grid"></div>
+    <div class="chart-boks"><h3 id="chart-titel">Xhiro orë pas ore</h3><canvas id="hoved-chart"></canvas></div>
+    <div class="stats-grid">
+      <div class="mini-tabel" id="top5-tabel"></div>
+      <div class="mini-tabel" id="betaling-tabel"></div>
+    </div>
+  </div>
+
+  <!-- HISTORIKU -->
+  <div class="side" id="historik-side">
+    <div class="side-header">
+      <h2>📋 Historiku i porosive</h2>
+      <button class="eksport-btn" onclick="fshiHistorikun()" style="background:var(--roed)">🗑 Fshi historikun</button>
+    </div>
+    <div class="filter-bar">
+      <input type="date" id="hist-fra" onchange="opdaterHistorik()">
+      <input type="date" id="hist-til" onchange="opdaterHistorik()">
+      <select id="hist-betaling" onchange="opdaterHistorik()">
+        <option value="">Të gjitha pagesat</option>
+        <option value="kontant">Kesh</option>
+        <option value="kort">Kartë</option>
+      </select>
+      <select id="hist-status" onchange="opdaterHistorik()">
+        <option value="">Të gjitha statuset</option>
+        <option value="betalt">Paguar</option>
+        <option value="afvist">Refuzuar</option>
+      </select>
+    </div>
+    <div class="historik-tabel">
+      <div class="ht-header">
+        <div>Porosi</div><div>Koha</div><div>Shuma</div><div>Pagesa</div><div>Statusi</div><div></div>
+      </div>
+      <div id="historik-liste"></div>
+    </div>
+  </div>
+
+  <!-- PRODUKTET -->
+  <div class="side" id="produkter-side">
+    <div class="side-header">
+      <h2>⚙️ Menaxhimi i Produkteve</h2>
+      <div style="display:flex;gap:8px">
+        <button class="tilfoej-btn" onclick="hapKategoriModal()">+ Kategori</button>
+        <button class="tilfoej-btn" onclick="hapProduktModal()">+ Produkt</button>
+        <button class="tilfoej-btn" onclick="hapNdryshimPin()" style="background:var(--tekst-lys);font-size:.78rem">🔑 Ndrysho PIN</button>
+      </div>
+    </div>
+    <div id="produkt-admin-grid" class="prod-grid"></div>
+  </div>
+
+</div>
+
+<!-- MODAL: Produkt -->
+<div class="modal-overlay" id="produkt-modal">
+  <div class="modal">
+    <h2 id="pm-titel">Produkt i ri</h2>
+    <input type="hidden" id="pm-id">
+    <div class="form-row">
+      <div class="form-gruppe"><label>Emri</label><input type="text" id="pm-navn" placeholder="Emri i produktit"></div>
+      <div class="form-gruppe"><label>Çmimi (€)</label><input type="number" id="pm-pris" placeholder="0.00" min="0" step="0.5"></div>
+    </div>
+    <div class="form-gruppe"><label>Kategoria</label><select id="pm-kategori"></select></div>
+    <div class="form-gruppe"><label>Ikona (emoji)</label><input type="text" id="pm-ikon" placeholder="🍕"></div>
+    <div class="form-gruppe"><label>Përshkrimi</label><textarea id="pm-beskrivelse" placeholder="Përshkrim i shkurtër..."></textarea></div>
+    <div class="form-gruppe"><div class="checkbox-gruppe"><input type="checkbox" id="pm-udsolgt"><label for="pm-udsolgt" style="text-transform:none;font-size:.88rem">Shëno si i mbaruar (udsolgt)</label></div></div>
+    <div class="modal-btns">
+      <button class="modal-slet" id="pm-slet-btn" onclick="fshiProdukt()" style="display:none">Fshi</button>
+      <button class="modal-annuller" onclick="mbyllModal('produkt-modal')">Anulo</button>
+      <button class="modal-gem" onclick="ruajProdukt()">Ruaj</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Kategori -->
+<div class="modal-overlay" id="kategori-modal">
+  <div class="modal">
+    <h2>Menaxho kategoritë</h2>
+    <div id="kat-liste-admin"></div>
+    <hr style="margin:14px 0;border-color:var(--border)">
+    <div class="form-gruppe"><label>Kategori e re</label><input type="text" id="ny-kat-navn" placeholder="Emri i kategorisë"></div>
+    <div class="modal-btns">
+      <button class="modal-annuller" onclick="mbyllModal('kategori-modal')">Mbyll</button>
+      <button class="modal-gem" onclick="shtoKategori()">Shto</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Faturë -->
+<div class="modal-overlay" id="kvittering-modal">
+  <div class="modal">
+    <h2>🧾 Faturë</h2>
+    <div class="kvit-boks" id="kvit-indhold"></div>
+    <button class="kvit-print-btn" onclick="printFature()">🖨️ Printo faturën</button>
+    <div class="modal-btns" style="margin-top:10px">
+      <button class="modal-annuller" onclick="mbyllModal('kvittering-modal')">Mbyll</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Kesh Llogaritës -->
+<div class="modal-overlay" id="kesh-modal">
+  <div class="modal">
+    <h2 id="kesh-titulli">💵 Pagesë me kesh</h2>
+    <div class="kesh-info">
+      <div class="kesh-totali-label">Totali për t'u paguar</div>
+      <div class="kesh-totali-val" id="kesh-totali-display">0,00 €</div>
+    </div>
+    <div class="kesh-dhene-display">
+      <div class="kesh-dhene-label">Sa ka dhënë klienti</div>
+      <div class="kesh-dhene-val" id="kesh-dhene-val">—</div>
+    </div>
+    <div class="kesh-kusuri" id="kesh-kusuri-boks">
+      <div class="kesh-kusuri-label">Kusuri</div>
+      <div class="kesh-kusuri-val" id="kesh-kusuri-val">—</div>
+    </div>
+    <div class="numpad">
+      <button class="np-btn" onclick="numpadShto('1')">1</button>
+      <button class="np-btn" onclick="numpadShto('2')">2</button>
+      <button class="np-btn" onclick="numpadShto('3')">3</button>
+      <button class="np-btn" onclick="numpadShto('4')">4</button>
+      <button class="np-btn" onclick="numpadShto('5')">5</button>
+      <button class="np-btn" onclick="numpadShto('6')">6</button>
+      <button class="np-btn" onclick="numpadShto('7')">7</button>
+      <button class="np-btn" onclick="numpadShto('8')">8</button>
+      <button class="np-btn" onclick="numpadShto('9')">9</button>
+      <button class="np-btn clear" onclick="numpadFshi()">C</button>
+      <button class="np-btn zero" onclick="numpadShto('0')">0</button>
+      <button class="np-btn back" onclick="numpadBack()">⌫</button>
+      <button class="np-btn" onclick="numpadShto('.')" style="grid-column:span 3;background:var(--bg2);font-size:1.4rem">.</button>
+    </div>
+    <button class="np-konfirmo" id="kesh-konfirmo-btn" onclick="konfirmoPagesaKesh()" disabled>✓ KONFIRMO PAGESËN</button>
+    <div class="modal-btns" style="margin-top:10px">
+      <button class="modal-annuller" onclick="mbyllModal('kesh-modal')">Anulo</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Z-Raport -->
+<div class="modal-overlay" id="zrap-modal">
+  <div class="modal">
+    <h2>📄 Raport Z</h2>
+    <div class="zrap-boks" id="zrap-indhold"></div>
+    <button class="kvit-print-btn" onclick="printZRaport()">🖨️ Printo raportin Z</button>
+    <div class="modal-btns" style="margin-top:10px">
+      <button class="modal-annuller" onclick="mbyllModal('zrap-modal')">Mbyll</button>
+    </div>
+  </div>
+</div>
+
+<!-- LOGIN / PIN MODAL -->
+<div class="modal-overlay" id="login-modal">
+  <div class="modal">
+    <h2 id="pin-titulli">🔐 Login Admin</h2>
+    <p id="pin-nentitulli" style="color:var(--tekst-lys);font-size:.85rem;margin-top:-10px;margin-bottom:4px">Shkruani kodin 8-shifror</p>
+    <div class="pin-dots" id="pin-display"></div>
+    <div class="pin-gabim" id="pin-gabim"></div>
+    <div class="pin-numpad">
+      <button class="pn-btn" onclick="pinShto('1')">1</button>
+      <button class="pn-btn" onclick="pinShto('2')">2</button>
+      <button class="pn-btn" onclick="pinShto('3')">3</button>
+      <button class="pn-btn" onclick="pinShto('4')">4</button>
+      <button class="pn-btn" onclick="pinShto('5')">5</button>
+      <button class="pn-btn" onclick="pinShto('6')">6</button>
+      <button class="pn-btn" onclick="pinShto('7')">7</button>
+      <button class="pn-btn" onclick="pinShto('8')">8</button>
+      <button class="pn-btn" onclick="pinShto('9')">9</button>
+      <button class="pn-btn fshi" onclick="pinReset()">C</button>
+      <button class="pn-btn zero" onclick="pinShto('0')">0</button>
+      <button class="pn-btn fshi" onclick="pinFshi()">⌫</button>
+    </div>
+    <div class="modal-btns" style="margin-top:0">
+      <button class="modal-annuller" onclick="mbyllModal('login-modal')">Anulo</button>
+    </div>
+  </div>
+</div>
+
+<!-- TAVOLINA MODAL -->
+<div class="modal-overlay" id="tavolina-modal">
+  <div class="modal">
+    <h2>⚙️ Menaxho tavolinat</h2>
+    <div id="tavolina-lista-admin"></div>
+    <hr style="margin:14px 0;border-color:var(--border)">
+    <div class="form-gruppe">
+      <label>Shto tavolinë të re</label>
+      <div style="display:flex;gap:8px">
+        <input type="text" id="tv-e-re" placeholder="p.sh. 11 ose Bar 1" style="flex:1;padding:9px 13px;border:2px solid var(--border);border-radius:8px;font-size:.9rem;font-family:inherit">
+        <button class="modal-gem" onclick="shtoTavolinë()">Shto</button>
+      </div>
+    </div>
+    <div class="modal-btns">
+      <button class="modal-annuller" onclick="mbyllModal('tavolina-modal')">Mbyll</button>
+    </div>
+  </div>
+</div>
+
+<!-- REDAKTIM MODAL -->
+<div class="modal-overlay" id="redaktim-modal">
+  <div class="modal">
+    <h2 id="redaktim-titulli">✏️ Ndrysho porosinë</h2>
+    <div class="red-grid">
+      <div class="red-seksion">
+        <h4>📋 Artikujt aktualë</h4>
+        <div id="redaktim-items"><p style="color:var(--tekst-lys);font-size:.83rem">Shporta është bosh.</p></div>
+      </div>
+      <div class="red-seksion">
+        <h4>➕ Shto produkt</h4>
+        <input class="red-kerko" type="text" id="redaktim-kerko" placeholder="Kërko produkt..." oninput="kerkoProduktetRedaktim()">
+        <div class="red-prod-liste" id="redaktim-prod-liste"></div>
+      </div>
+    </div>
+    <div class="red-total-boks">
+      <span style="font-size:.83rem;font-weight:600;color:var(--tekst-lys)">Totali i ri</span>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="red-diff zero" id="red-diff"></span>
+        <span class="red-total-val" id="redaktim-total-val">0,00 €</span>
+      </div>
+    </div>
+    <div class="modal-btns">
+      <button class="modal-annuller" onclick="mbyllModal('redaktim-modal')">Anulo</button>
+      <button class="modal-gem" onclick="ruajNdryshimet()">💾 Ruaj ndryshimet</button>
+    </div>
+  </div>
+</div>
+
+<!-- SIZE PICKER -->
+<div class="modal-overlay" id="size-modal">
+  <div class="modal" id="size-modal-inner">
+    <h2 id="size-titulli">Zgjidh madhësinë</h2>
+    <div id="size-opsionet"></div>
+    <div class="modal-btns" style="margin-top:4px">
+      <button class="modal-annuller" onclick="mbyllModal('size-modal')">Anulo</button>
+    </div>
+  </div>
+</div>
+
+<!-- CELEBRATION -->
+<div class="confetti-container" id="confetti-container"></div>
+<div id="celebration">
+  <div class="cel-box">
+    <div class="cel-ikon" id="cel-ikon">✅</div>
+    <div class="cel-titulli" id="cel-titulli">Pagesa u krye!</div>
+    <div class="cel-sub" id="cel-sub"></div>
+    <div class="cel-kusuri-boks" id="cel-kusuri-boks">
+      <div class="cel-kusuri-label">Kusuri për t'i kthyer</div>
+      <div class="cel-kusuri-val" id="cel-kusuri-val">0,00 €</div>
+    </div>
+    <div class="cel-btns">
+      <button class="cel-mbyll" onclick="mbyllCelebration()">✓ Vazhdo</button>
+      <button class="cel-kthe" id="cel-kthe-btn" onclick="ktheOrdrenNgaCelebration()" style="display:none">↩ Kthe pagesën (gabim)</button>
+    </div>
+  </div>
+</div>
+
+<!-- UNDO BANNER -->
+<div id="undo-banner">
+  <span id="undo-tekst">Pagesa u krye ✓</span>
+  <div style="display:flex;align-items:center;gap:10px">
+    <span id="undo-timer"></span>
+    <button onclick="ktheOrdrenNgaBanner()">↩ Kthe (gabim)</button>
+  </div>
+</div>
+
+<div id="print-area" style="display:none"></div>
+<div id="toast"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
