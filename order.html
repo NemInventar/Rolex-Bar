@@ -52,59 +52,76 @@
   #bord-sektion{
     background:var(--hvid);
     border-bottom:2px solid var(--border);
-    padding:16px 16px 18px;
+    padding:14px 16px;
   }
-  #bord-sektion label{
+  #bord-sektion > label{
     font-size:.72rem;font-weight:800;text-transform:uppercase;
-    letter-spacing:.8px;color:var(--tekst-lys);display:block;margin-bottom:12px;
+    letter-spacing:.8px;color:var(--tekst-lys);display:block;margin-bottom:10px;
   }
+
+  /* Valgt bord — kompakt linje */
+  #bord-valgt{
+    display:none;align-items:center;justify-content:space-between;
+    background:var(--bg);border:2px solid var(--brun);border-radius:14px;
+    padding:12px 16px;
+  }
+  #bord-valgt.vis{display:flex}
+  #bord-valgt-tekst{font-size:.95rem;font-weight:800;color:var(--brun)}
+  #bord-valgt-skift{
+    font-size:.78rem;font-weight:700;color:var(--tekst-lys);
+    background:none;border:none;cursor:pointer;font-family:inherit;
+    text-decoration:underline;padding:0;
+  }
+
+  /* Zone knapper */
+  #zone-tabs{
+    display:grid;grid-template-columns:1fr 1fr;
+    gap:10px;margin-bottom:0;
+  }
+  .zone-tab{
+    padding:18px 10px;border:2px solid var(--border);
+    border-radius:16px;background:var(--bg);
+    font-size:1rem;font-weight:700;font-family:inherit;
+    cursor:pointer;transition:all .15s;color:var(--tekst-lys);
+    display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:6px;
+  }
+  .zone-tab .zone-ikon{font-size:1.8rem;line-height:1}
+  .zone-tab .zone-label{font-size:.8rem;font-weight:800;letter-spacing:.3px}
+  .zone-tab.aktiv{
+    background:var(--brun);border-color:var(--brun);color:#fff;
+    box-shadow:0 4px 14px rgba(26,10,5,.25);
+  }
+
+  /* Grid — skjult indtil zone er valgt */
+  #bord-grid-wrap{
+    overflow:hidden;max-height:0;
+    transition:max-height .3s cubic-bezier(.4,0,.2,1), margin-top .3s;
+    margin-top:0;
+  }
+  #bord-grid-wrap.vis{max-height:400px;margin-top:12px}
   #bord-grid{
     display:grid;
-    grid-template-columns:repeat(auto-fill,minmax(72px,1fr));
-    gap:10px;
+    grid-template-columns:repeat(auto-fill,minmax(68px,1fr));
+    gap:9px;
   }
   .bord-btn{
-    aspect-ratio:1;
-    border:2px solid var(--border);
-    border-radius:16px;
-    background:var(--bg);
-    font-size:1.4rem;font-weight:800;
-    color:var(--tekst-lys);cursor:pointer;
-    transition:all .15s;font-family:inherit;
-    display:flex;flex-direction:column;
-    align-items:center;justify-content:center;
-    gap:3px;
-    box-shadow:0 1px 3px rgba(0,0,0,.05);
+    aspect-ratio:1;border:2px solid var(--border);border-radius:14px;
+    background:var(--bg);font-size:1.35rem;font-weight:800;
+    color:var(--tekst-lys);cursor:pointer;transition:all .15s;font-family:inherit;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+    box-shadow:0 1px 3px rgba(0,0,0,.04);
   }
   .bord-btn::after{
-    content:'Tavolinë';
-    font-size:.55rem;font-weight:600;
-    text-transform:uppercase;letter-spacing:.4px;
-    opacity:.5;
+    content:'Tavolinë';font-size:.5rem;font-weight:700;
+    text-transform:uppercase;letter-spacing:.4px;opacity:.45;
   }
-  .bord-btn:active{transform:scale(.94)}
+  .bord-btn:active{transform:scale(.93)}
   .bord-btn.aktiv{
     background:var(--brun);border-color:var(--brun);color:#fff;
     box-shadow:0 4px 14px rgba(26,10,5,.3);
   }
   .bord-btn.aktiv::after{opacity:.6;color:#fff}
-
-  /* ── ZONE TABS ── */
-  #zone-tabs{
-    display:grid;grid-template-columns:1fr 1fr;
-    gap:8px;margin-bottom:14px;
-  }
-  .zone-tab{
-    padding:13px 10px;border:2px solid var(--border);
-    border-radius:14px;background:var(--bg);
-    font-size:.9rem;font-weight:700;font-family:inherit;
-    cursor:pointer;transition:all .15s;color:var(--tekst-lys);
-    display:flex;align-items:center;justify-content:center;gap:7px;
-  }
-  .zone-tab.aktiv{
-    background:var(--brun);border-color:var(--brun);color:#fff;
-    box-shadow:0 3px 12px rgba(26,10,5,.25);
-  }
 
   /* ── KATEGORI BAR ── */
   #kat-bar{
@@ -324,11 +341,23 @@
 <div id="app" style="display:none;flex:1;flex-direction:column;display:none">
   <div id="bord-sektion">
     <label>🪑 Zgjidh tavolinën</label>
-    <div id="zone-tabs">
-      <button class="zone-tab aktiv" onclick="skiftZone('brendshëm',this)">🏠 Brendshëm</button>
-      <button class="zone-tab" onclick="skiftZone('terasa',this)">🌿 Terasa</button>
+    <div id="bord-valgt">
+      <span id="bord-valgt-tekst"></span>
+      <button id="bord-valgt-skift" onclick="ndryshoZgjedhjen()">Ndrysho</button>
     </div>
-    <div id="bord-grid"></div>
+    <div id="zone-tabs">
+      <button class="zone-tab" onclick="skiftZone('brendshëm',this)">
+        <span class="zone-ikon">🏠</span>
+        <span class="zone-label">Brendshëm</span>
+      </button>
+      <button class="zone-tab" onclick="skiftZone('terasa',this)">
+        <span class="zone-ikon">🌿</span>
+        <span class="zone-label">Terasa</span>
+      </button>
+    </div>
+    <div id="bord-grid-wrap">
+      <div id="bord-grid"></div>
+    </div>
   </div>
   <div id="kat-bar"></div>
   <div id="prod-grid"></div>
@@ -417,25 +446,42 @@ function skiftZone(zone, el){
   aktivZone = zone;
   document.querySelectorAll('.zone-tab').forEach(b=>b.classList.remove('aktiv'));
   el.classList.add('aktiv');
-  // Nulstil bordvalg hvis det valgte bord er i den anden zone
   if(valgBord){
     const t=tavolina.find(x=>x.nr===valgBord);
-    if(t && erTerasa(t) !== (zone==='terasa')){ valgBord=null; opdaterKurvBar(); }
+    if(t && erTerasa(t) !== (zone==='terasa')){ valgBord=null; }
   }
+  document.getElementById('bord-grid-wrap').classList.add('vis');
   renderBorde();
+}
+
+function ndryshoZgjedhjen(){
+  valgBord=null;
+  document.getElementById('bord-valgt').classList.remove('vis');
+  document.getElementById('zone-tabs').style.display='grid';
+  document.getElementById('bord-grid-wrap').classList.add('vis');
+  renderBorde();
+  opdaterKurvBar();
 }
 
 function renderBorde(){
   const grid=document.getElementById('bord-grid');
   const liste=tavolina.filter(t=> aktivZone==='terasa' ? erTerasa(t) : !erTerasa(t));
-  const visNr=t=> aktivZone==='terasa' ? t.nr.slice(1) : t.nr; // vis "1" i stedet for "T1" på terasa
+  const visNr=t=> aktivZone==='terasa' ? t.nr.slice(1) : t.nr;
   grid.innerHTML=liste.map(t=>`
     <button class="bord-btn${valgBord===t.nr?' aktiv':''}" onclick="valgBordFn('${t.nr}')">${visNr(t)}</button>
   `).join('');
 }
+
 function valgBordFn(nr){
-  valgBord = valgBord===nr ? null : nr;
-  renderBorde();
+  valgBord=nr;
+  // Kollaps til kompakt linje
+  const t=tavolina.find(x=>x.nr===nr);
+  const zone=erTerasa(t)?'🌿 Terasa':'🏠 Brendshëm';
+  const visNr=erTerasa(t)?nr.slice(1):nr;
+  document.getElementById('bord-valgt-tekst').textContent=`${zone} · Tavolina ${visNr}`;
+  document.getElementById('bord-valgt').classList.add('vis');
+  document.getElementById('zone-tabs').style.display='none';
+  document.getElementById('bord-grid-wrap').classList.remove('vis');
   opdaterKurvBar();
 }
 
