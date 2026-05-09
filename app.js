@@ -1483,8 +1483,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('hist-til').value=sot;
   opdaterUr();
   setInterval(opdaterUr,1000);
-  setInterval(()=>{if(document.getElementById('aabne-side').classList.contains('aktiv'))renderAabneBorde();opdaterAabneBadge()},30000);
-  setInterval(()=>{loadData().then(()=>{genindlaesVentende();opdaterAabneBadge()})},30000);
+  setInterval(async ()=>{
+    await loadData();
+    renderAabneBorde();
+    genindlaesVentende();
+    opdaterAabneBadge();
+  }, 8000);
 
   // Realtime subscription for live order updates
   sb.channel('ordrer-live')
