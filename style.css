@@ -938,8 +938,33 @@ body{
 .eksport-btn.arkiv-aktiv{background:var(--brun)!important;color:#fff!important}
 
 /* ─── PRODUKTET ──────────────────────────────────── */
-#produkter-side{flex-direction:column;padding:20px;gap:16px;overflow-y:auto}
+#produkter-side{flex-direction:column;padding:20px;gap:14px;overflow-y:auto}
 #produkter-side>*{flex-shrink:0}
+
+/* ─── CILËSIMET (Settings sections) ─────────────────── */
+.sett-boks{
+  background:var(--white);border-radius:16px;box-shadow:var(--shadow);overflow:hidden;
+}
+.sett-summary{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:12px;padding:17px 20px;cursor:pointer;list-style:none;
+  user-select:none;border-bottom:2px solid transparent;transition:border-color .12s;
+}
+.sett-boks[open]>.sett-summary{border-bottom-color:var(--border)}
+.sett-summary::-webkit-details-marker{display:none}
+.sett-summary>span{
+  font-size:.97rem;font-weight:700;color:var(--tekst);
+  display:flex;align-items:center;gap:6px;
+}
+.sett-summary>span::after{
+  content:'▸';font-size:.75rem;color:var(--tekst-lys);
+  margin-left:6px;transition:transform .2s;display:inline-block;
+}
+.sett-boks[open] .sett-summary>span::after{transform:rotate(90deg)}
+.sett-summary:hover{background:var(--bg)}
+.sett-actions{display:flex;gap:8px;flex-shrink:0}
+.sett-content{padding:16px 20px 20px}
+
 .prod-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px}
 .prod-kort{
   background:var(--hvid);border:none;border-radius:16px;

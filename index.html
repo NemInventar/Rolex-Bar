@@ -38,7 +38,7 @@
   <div class="tab" onclick="skiftTab('ventende')" id="tab-ventende">📱 Mobil</div>
   <div class="tab" onclick="skiftTab('omsaetning')">📊 Xhiro</div>
   <div class="tab" onclick="skiftTab('historik')">📋 Historiku</div>
-  <div class="tab" onclick="skiftTab('produkter')">⚙️ Produktet</div>
+  <div class="tab" onclick="skiftTab('produkter')">⚙️ Cilësimet</div>
   <div class="tab" onclick="hapZRaport()" style="margin-left:auto">📄 Raport Z</div>
 </div>
 
@@ -202,26 +202,42 @@
     </div>
   </div>
 
-  <!-- PRODUKTET -->
+  <!-- CILËSIMET -->
   <div class="side" id="produkter-side">
-    <div class="side-header">
-      <h2>⚙️ Menaxhimi i Produkteve</h2>
-      <div style="display:flex;gap:8px">
-        <button class="tilfoej-btn" onclick="hapKategoriModal()">+ Kategori</button>
-        <button class="tilfoej-btn" onclick="hapProduktModal()">+ Produkt</button>
-        <button class="tilfoej-btn" onclick="hapNdryshimPin()" style="background:var(--tekst-lys);font-size:.78rem">🔑 Ndrysho PIN</button>
-      </div>
-    </div>
-    <div id="produkt-admin-grid" class="prod-grid"></div>
 
-    <!-- PERSONELI -->
-    <div style="margin-top:32px;padding-top:24px;border-top:2px solid var(--border)">
-      <div class="side-header" style="padding:0 0 16px">
-        <h2>👥 Personeli</h2>
-        <button class="tilfoej-btn" onclick="hapBrugerModal()">+ Shto person</button>
+    <!-- 1. Produktet -->
+    <details class="sett-boks">
+      <summary class="sett-summary">
+        <span>🛍️ Produktet &amp; Kategoritë</span>
+        <div class="sett-actions" onclick="event.stopPropagation()">
+          <button class="tilfoej-btn" onclick="hapKategoriModal()">+ Kategori</button>
+          <button class="tilfoej-btn" onclick="hapProduktModal()">+ Produkt</button>
+        </div>
+      </summary>
+      <div id="produkt-admin-grid" class="prod-grid sett-content"></div>
+    </details>
+
+    <!-- 2. Personeli -->
+    <details class="sett-boks" open>
+      <summary class="sett-summary">
+        <span>👥 Personeli</span>
+        <div class="sett-actions" onclick="event.stopPropagation()">
+          <button class="tilfoej-btn" onclick="hapBrugerModal()">+ Shto person</button>
+        </div>
+      </summary>
+      <div id="personel-liste" class="sett-content"></div>
+    </details>
+
+    <!-- 3. Siguria -->
+    <details class="sett-boks">
+      <summary class="sett-summary">
+        <span>🔑 Siguria &amp; PIN</span>
+      </summary>
+      <div class="sett-content">
+        <button class="tilfoej-btn" onclick="hapNdryshimPin()" style="background:var(--tekst-lys)">🔑 Ndrysho PIN Admin</button>
       </div>
-      <div id="personel-liste"></div>
-    </div>
+    </details>
+
   </div>
 
 </div>
