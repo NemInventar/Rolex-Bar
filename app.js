@@ -1379,7 +1379,7 @@ async function opdaterOmsaetning(){
     titull='Xhiro mujore — '+d.toLocaleDateString('sq-AL',{month:'long',year:'numeric'});
   }
   const {data:rows,error}=await sb.from('ordrer').select('*,ordre_linjer(*)').eq('restaurant_id',RESTAURANT_ID).eq('status','betalt').gte('oprettet',fraStr).lte('oprettet',tilStr);
-  if(error){console.error('opdaterOmsaetning',error);return}
+  if(error){console.error('opdaterOmsaetning',error);document.getElementById('kpi-grid').innerHTML=`<div style="color:var(--roed);padding:12px;grid-column:1/-1">⚠️ Gabim: ${error.message}</div>`;return}
   const rel=(rows||[]).map(o=>({...o,items:(o.ordre_linjer||[]).map(l=>({produkt_navn:l.navn,antal:l.antal,produkt_pris:l.pris}))}));
   if(aktivPeriode==='dag'){
     const t={};for(let h=7;h<=22;h++)t[h]=0;

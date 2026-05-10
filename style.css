@@ -500,6 +500,7 @@ body{
 
 /* ─── TAVOLINA GRID ──────────────────────────────── */
 #aabne-side{flex-direction:column;padding:20px;gap:18px;overflow-y:auto}
+#aabne-side>*{flex-shrink:0}
 .tv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px}
 
 /* Base card */
@@ -747,6 +748,7 @@ body{
 
 /* ─── VENTENDE / MOBIL ───────────────────────────── */
 #ventende-side{flex-direction:column;padding:20px;gap:16px;overflow-y:auto}
+#ventende-side>*{flex-shrink:0}
 .ordrer-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:16px}
 .ordre-kort{
   background:var(--hvid);border:none;border-radius:16px;
@@ -782,6 +784,7 @@ body{
 
 /* ─── XHIRO ──────────────────────────────────────── */
 #omsaetning-side{flex-direction:column;padding:20px;gap:18px;overflow-y:auto}
+#omsaetning-side>*{flex-shrink:0}
 .periode-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .periode-btn{
   padding:7px 18px;
@@ -875,6 +878,7 @@ body{
 
 /* ─── PRODUKTET ──────────────────────────────────── */
 #produkter-side{flex-direction:column;padding:20px;gap:16px;overflow-y:auto}
+#produkter-side>*{flex-shrink:0}
 .prod-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px}
 .prod-kort{
   background:var(--hvid);border:none;border-radius:16px;
