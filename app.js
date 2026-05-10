@@ -1866,17 +1866,25 @@ function fshiKategorine(id){if(!erAdmin){visToast('🔒 Keni nevojë për login 
 // =============================================
 // RAPORT Z
 // =============================================
-function hapZRaport(){
+async function hapZRaport(){
   const sot=sotDita();
-  const dr=ordrer.filter(o=>o.status==='betalt'&&o.oprettet.slice(0,10)===sot);
+  document.getElementById('zrap-indhold').textContent='Duke ngarkuar...';
+  document.getElementById('zrap-modal').classList.add('vis');
+  const {data,error}=await sb.from('ordrer')
+    .select('total,moms,betaling')
+    .eq('restaurant_id',RESTAURANT_ID)
+    .eq('status','betalt')
+    .gte('oprettet',_localIso(sot,'00:00:00'))
+    .lte('oprettet',_localIso(sot,'23:59:59'));
+  if(error){document.getElementById('zrap-indhold').textContent='⚠️ Gabim: '+error.message;return}
+  const dr=data||[];
   const kesh=dr.filter(o=>o.betaling==='kontant').reduce((s,o)=>s+o.total,0);
   const karte=dr.filter(o=>o.betaling==='kort'||o.betaling==='mobil').reduce((s,o)=>s+o.total,0);
-  const tvsh=dr.reduce((s,o)=>s+o.moms,0);
+  const tvsh=dr.reduce((s,o)=>s+(o.moms||0),0);
   const xhiro=dr.reduce((s,o)=>s+o.total,0);
   const d=new Date();
   let t=`======== RAPORT Z ========\nArtizano – Eat & More\nData: ${d.toLocaleDateString('sq-AL')}\nGjeneruar: ${d.toLocaleTimeString('sq-AL')}\n==========================\nNr. transaksioneve: ${dr.length}\n==========================\nKesh:      ${euro(kesh)}\nKartë/Mob: ${euro(karte)}\n--------------------------\nXhiro:     ${euro(xhiro)}\nTVSH (18%):${euro(tvsh)}\nNeto:      ${euro(xhiro-tvsh)}\n==========================\nGjendja e kasës:\nJu lutemi numëroni manualisht\n==========================`;
   document.getElementById('zrap-indhold').textContent=t;
-  document.getElementById('zrap-modal').classList.add('vis');
 }
 function printZRaport(){
   document.getElementById('print-area').innerHTML=`<div style="width:80mm;font-family:'Courier New',monospace;font-size:12px;padding:4mm">${document.getElementById('zrap-indhold').textContent.replace(/\n/g,'<br>')}</div>`;
