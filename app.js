@@ -144,6 +144,7 @@ function fshiNjeOrdre(id){
 }
 let kurv = [], aktivKategori = 'alle';
 let brugere = [];
+let posPikZone = null;
 let aktivPeriode = 'dag', periodeChart = null;
 let keshAmount = '', keshOrdreId = null, keshGjithaBord = null;
 let celebrationOrdreId = null;
@@ -485,6 +486,7 @@ function ndryshoAntal(idx,delta){kurv[idx].antal+=delta;if(kurv[idx].antal<=0)ku
 function hiqNgaShporta(idx){kurv.splice(idx,1);renderShporta()}
 function rydKurv(){
   kurv=[];
+  posPikZone=null;
   document.getElementById('bord-felt').value='';
   document.getElementById('bord-felt').classList.remove('gabim');
   document.getElementById('bord-gabim').style.display='none';
@@ -500,15 +502,38 @@ function renderTablePicker(){
   const picker=document.getElementById('table-picker');
   if(!picker) return;
   const bordVal=document.getElementById('bord-felt')?.value.trim()||'';
-  const aabne=ordrer.filter(o=>o.status==='aaben');
-  picker.innerHTML=tavolina.map(t=>{
-    const zene=aabne.some(o=>o.bord===t.nr);
-    const zgjedhur=bordVal===t.nr;
-    let cls='tp-btn';
-    if(zgjedhur) cls+=' zgjedhur';
-    else if(zene) cls+=' zene';
-    return `<button class="${cls}" data-nr="${t.nr}" onclick="zgjidhTavolinë('${t.nr}')" title="${zene?'E zënë':'E lirë'}">${t.nr}</button>`;
-  }).join('');
+  const aabneNr=new Set(ordrer.filter(o=>o.status==='aaben').map(o=>o.bord));
+  const zeneBorde=tavolina.filter(t=>aabneNr.has(t.nr));
+  let html='';
+  // Occupied tables — always visible
+  if(zeneBorde.length){
+    html+=`<div class="tp-zene-header">🔴 Me porosi aktive</div><div class="tp-row">`;
+    html+=zeneBorde.map(t=>`<button class="tp-btn zene${bordVal===t.nr?' zgjedhur':''}" data-nr="${t.nr}" onclick="zgjidhTavolinë('${t.nr}')">${t.nr}</button>`).join('');
+    html+=`</div>`;
+  }
+  // Zone selection for empty tables
+  html+=`<div class="tp-zone-btns">
+    <button class="tp-zone-btn${posPikZone==='brendshëm'?' aktiv':''}" onclick="zgjidhZonePOS('brendshëm')">🏠 Brendshëm</button>
+    <button class="tp-zone-btn${posPikZone==='terasa'?' aktiv':''}" onclick="zgjidhZonePOS('terasa')">🌿 Terasa</button>
+  </div>`;
+  if(posPikZone){
+    const erT=posPikZone==='terasa';
+    const liste=tavolina.filter(t=>erT?t.nr.startsWith('T'):!t.nr.startsWith('T'));
+    html+=`<div class="tp-row" style="margin-top:8px">`;
+    html+=liste.map(t=>{
+      const zene=aabneNr.has(t.nr);
+      const zgj=bordVal===t.nr;
+      const label=erT?t.nr.slice(1):t.nr;
+      return `<button class="tp-btn${zgj?' zgjedhur':zene?' zene':''}" data-nr="${t.nr}" onclick="zgjidhTavolinë('${t.nr}')">${label}</button>`;
+    }).join('');
+    html+=`</div>`;
+  }
+  picker.innerHTML=html;
+}
+
+function zgjidhZonePOS(zone){
+  posPikZone=posPikZone===zone?null:zone;
+  renderTablePicker();
 }
 
 function zgjidhTavolinë(nr){

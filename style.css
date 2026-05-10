@@ -416,7 +416,17 @@ body{
 .bord-input.gabim{border-color:var(--roed)!important;box-shadow:0 0 0 3px rgba(239,68,68,.12)}
 
 /* Table picker pills */
-.table-picker{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px}
+.table-picker{display:flex;flex-direction:column;gap:0;margin-bottom:8px}
+.tp-zene-header{font-size:.69rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--roed);margin:4px 0 5px}
+.tp-row{display:flex;flex-wrap:wrap;gap:5px}
+.tp-zone-btns{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:8px 0 0}
+.tp-zone-btn{
+  padding:8px 0;border-radius:10px;border:1.5px solid var(--border);
+  background:var(--bg);color:var(--tekst-lys);font-size:.8rem;font-weight:700;
+  cursor:pointer;font-family:inherit;transition:all .13s;
+}
+.tp-zone-btn.aktiv{background:var(--brun);color:#fff;border-color:var(--brun)}
+.tp-zone-btn:hover:not(.aktiv){border-color:var(--guld);color:var(--tekst)}
 .tp-btn{
   padding:5px 12px;
   border-radius:99px;
