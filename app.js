@@ -1780,9 +1780,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   genindlaesVentende();
   opdaterAabneBadge();
   document.getElementById('periode-dato').value=sotDita();
-  const sot=sotDita();
-  document.getElementById('hist-fra').value=sot.slice(0,8)+'01';
-  document.getElementById('hist-til').value=sot;
   opdaterUr();
   setInterval(opdaterUr,1000);
   setInterval(async ()=>{
