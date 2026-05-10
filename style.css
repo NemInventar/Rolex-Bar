@@ -1184,9 +1184,29 @@ body{
 /* ─── PRODUKT-SHITJE ─────────────────────────────── */
 .produkt-shitje-boks{
   background:var(--white);border-radius:16px;
-  box-shadow:var(--shadow);padding:24px;margin-top:24px;
+  box-shadow:var(--shadow);padding:0;margin-top:24px;
+  overflow:hidden;
 }
-.ps-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px}
+.produkt-shitje-boks[open]{padding-bottom:24px}
+.ps-summary{
+  display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:12px;padding:20px 24px;cursor:pointer;
+  list-style:none;user-select:none;
+}
+.ps-summary::-webkit-details-marker{display:none}
+.ps-summary>span{
+  font-size:1rem;font-weight:600;color:var(--tekst);
+  display:flex;align-items:center;gap:8px;
+}
+.ps-summary>span::after{
+  content:'▸';font-size:.85rem;color:var(--tekst-lys);
+  transition:transform .2s;display:inline-block;
+}
+.produkt-shitje-boks[open] .ps-summary>span::after{transform:rotate(90deg)}
+.ps-summary:hover{background:var(--bg)}
+.ps-sort-bar{padding:0 24px;display:flex;gap:8px;margin-bottom:14px}
+#produkt-shitje-liste{padding:0 24px}
+.ps-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px;padding:20px 24px 0}
 .ps-header h3{margin:0;font-size:1rem;color:var(--tekst)}
 .ps-filter{display:flex;align-items:center;gap:8px}
 .ps-filter input[type=date]{

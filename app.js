@@ -371,8 +371,10 @@ function skiftTab(tab) {
       document.getElementById('ps-til').value=sotDita();
     }
     if(!document.getElementById('kassa-dato').value) document.getElementById('kassa-dato').value=sotDita();
+    _shitjetNgarkuar=false;
+    const det=document.getElementById('shitjet-produkt-details');
+    if(det) det.removeAttribute('open');
     opdaterOmsaetning();
-    opdaterShitjetProdukt();
     opdaterShitjetPersonel();
     renderKassaKontroll();
   }
@@ -1414,6 +1416,13 @@ async function opdaterOmsaetning(){
 // ─── PRODUKT-SHITJE ───────────────────────────────
 let _shitjetData=[];
 let _sortKey='antal';
+let _shitjetNgarkuar=false;
+function ngarkoShitjetProdukt(el){
+  if(el.open && !_shitjetNgarkuar){
+    _shitjetNgarkuar=true;
+    opdaterShitjetProdukt();
+  }
+}
 async function opdaterShitjetProdukt(){
   const fra=document.getElementById('ps-fra').value;
   const til=document.getElementById('ps-til').value;
