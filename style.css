@@ -1202,6 +1202,34 @@ body{
 .ps-xhiro{text-align:right;font-weight:700;color:var(--guld)}
 .ps-loading{color:var(--tekst-lys);font-size:.85rem;padding:16px 0;text-align:center}
 
+/* ─── KASSA KONTROLL ─────────────────────────────── */
+.kassa-boks{background:var(--white);border-radius:16px;box-shadow:var(--shadow);padding:24px;margin-top:16px}
+.kassa-tabel{width:100%;border-collapse:collapse;font-size:.85rem}
+.kassa-tabel th{
+  text-align:left;padding:8px 10px;font-size:.75rem;font-weight:700;
+  color:var(--tekst-lys);text-transform:uppercase;letter-spacing:.04em;
+  border-bottom:2px solid var(--border);
+}
+.kassa-tabel td{padding:10px 10px;border-bottom:1px solid var(--border);vertical-align:middle}
+.kassa-tabel tr:last-child td{border-bottom:none}
+.kassa-tabel tr:hover td{background:var(--bg)}
+.kassa-inp{
+  width:90px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;
+  font-size:.85rem;font-family:inherit;color:var(--tekst);background:var(--bg);
+  text-align:right;
+}
+.kassa-inp:focus{outline:none;border-color:var(--guld);background:#fff}
+.kassa-avatar-sm{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:28px;height:28px;border-radius:50%;font-size:.78rem;font-weight:800;
+  color:#fff;margin-right:8px;vertical-align:middle;
+}
+.kassa-shitje{font-weight:600;color:var(--tekst)}
+.kassa-diff{font-weight:800;font-size:.9rem}
+.kassa-diff.plus{color:#10B981}
+.kassa-diff.minus{color:var(--roed)}
+.kassa-diff.nul{color:var(--tekst-lys)}
+
 /* ─── PERSONELI ──────────────────────────────────── */
 .pers-raekke{
   display:flex;align-items:center;gap:14px;

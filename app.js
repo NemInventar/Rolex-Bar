@@ -369,9 +369,11 @@ function skiftTab(tab) {
       document.getElementById('ps-fra').value=`${y}-${m}-01`;
       document.getElementById('ps-til').value=sotDita();
     }
+    if(!document.getElementById('kassa-dato').value) document.getElementById('kassa-dato').value=sotDita();
     opdaterOmsaetning();
     opdaterShitjetProdukt();
     opdaterShitjetPersonel();
+    renderKassaKontroll();
   }
   if(tab==='historik') opdaterHistorik();
   if(tab==='ventende') genindlaesVentende();
@@ -1530,6 +1532,54 @@ async function opdaterShitjetPersonel(){
   if(!rows.length){liste.innerHTML='<div class="ps-loading">Nuk ka të dhëna</div>';return}
   liste.innerHTML='<div class="ps-raekke ps-header-row"><span>Personi</span><span>Porosi</span><span>Xhiro</span></div>'+
     rows.map((r,i)=>`<div class="ps-raekke${i%2?'':' alt'}"><span class="ps-namn">${r.navn}</span><span class="ps-antal">${r.porosi}</span><span class="ps-xhiro">${euro(r.xhiro)}</span></div>`).join('');
+}
+
+// ─── KASSA KONTROLL ──────────────────────────
+async function renderKassaKontroll(){
+  const wrap=document.getElementById('kassa-tabel-wrap');
+  if(!wrap) return;
+  const dato=document.getElementById('kassa-dato').value||sotDita();
+  wrap.innerHTML='<div class="ps-loading">Duke ngarkuar...</div>';
+  const aktive=brugere.filter(b=>b.aktiv);
+  if(!aktive.length){wrap.innerHTML='<div class="ps-loading">Nuk ka personel aktiv</div>';return}
+  const [gjRes,salesRes]=await Promise.all([
+    sb.from('kassa_gjendja').select('*').eq('restaurant_id',RESTAURANT_ID).eq('data',dato),
+    sb.from('ordrer').select('bruger_id,total').eq('restaurant_id',RESTAURANT_ID).eq('status','betalt').eq('betaling','kontant').gte('oprettet',_localIso(dato,'00:00:00')).lte('oprettet',_localIso(dato,'23:59:59'))
+  ]);
+  const gj={};(gjRes.data||[]).forEach(r=>{gj[r.bruger_id]=r});
+  const sh={};(salesRes.data||[]).forEach(o=>{if(o.bruger_id) sh[o.bruger_id]=(sh[o.bruger_id]||0)+parseFloat(o.total||0)});
+  wrap.innerHTML=`<table class="kassa-tabel">
+    <thead><tr><th>Personi</th><th style="text-align:right">Fillimi €</th><th style="text-align:right">Shitje kesh</th><th style="text-align:right">Fundi €</th><th style="text-align:right">Diferenca</th></tr></thead>
+    <tbody>${aktive.map((b,i)=>{
+      const g=gj[b.id]||{};
+      const fillim=g.fillim!=null?parseFloat(g.fillim):null;
+      const fund=g.fund!=null?parseFloat(g.fund):null;
+      const shitje=sh[b.id]||0;
+      let diffHtml='<span class="kassa-diff nul">–</span>';
+      if(fillim!==null&&fund!==null){
+        const d=fund-(fillim+shitje);
+        const cls=Math.abs(d)<0.005?'nul':d>0?'plus':'minus';
+        diffHtml=`<span class="kassa-diff ${cls}">${d>=0?'+':''}${d.toFixed(2)} €</span>`;
+      }
+      return `<tr>
+        <td><span class="kassa-avatar-sm" style="background:${BRUGER_COLORS[i%BRUGER_COLORS.length]}">${b.navn.charAt(0)}</span>${b.navn}</td>
+        <td style="text-align:right"><input class="kassa-inp" type="number" step="0.01" min="0" value="${fillim!==null?fillim.toFixed(2):''}" placeholder="0.00" onblur="ruajKassa('${b.id}','fillim',this.value,'${dato}')"></td>
+        <td class="kassa-shitje" style="text-align:right">${euro(shitje)}</td>
+        <td style="text-align:right"><input class="kassa-inp" type="number" step="0.01" min="0" value="${fund!==null?fund.toFixed(2):''}" placeholder="0.00" onblur="ruajKassa('${b.id}','fund',this.value,'${dato}')"></td>
+        <td style="text-align:right">${diffHtml}</td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table>`;
+}
+
+async function ruajKassa(brugerId,field,valStr,dato){
+  const val=parseFloat(valStr);
+  if(isNaN(val)||val<0) return;
+  await sb.from('kassa_gjendja').upsert(
+    {restaurant_id:RESTAURANT_ID,bruger_id:brugerId,data:dato,[field]:val},
+    {onConflict:'restaurant_id,bruger_id,data'}
+  );
+  renderKassaKontroll();
 }
 
 // =============================================
