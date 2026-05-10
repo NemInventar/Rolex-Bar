@@ -823,13 +823,14 @@ body{
 
 /* ─── HISTORIK ───────────────────────────────────── */
 #historik-side{flex-direction:column;padding:20px;gap:16px;overflow-y:auto}
+#historik-side>*{flex-shrink:0}
 .filter-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .filter-bar input,.filter-bar select{
   padding:7px 14px;border:1.5px solid var(--border);
   border-radius:99px;font-size:.8rem;color:var(--tekst);
   font-family:inherit;background:var(--hvid);
 }
-.historik-tabel{background:var(--hvid);border:none;border-radius:16px;overflow:hidden;box-shadow:var(--shadow)}
+.historik-tabel{background:var(--hvid);border:none;border-radius:16px;overflow:hidden;box-shadow:var(--shadow);flex-shrink:0}
 .ht-header{
   display:grid;grid-template-columns:80px 1fr 90px 90px 75px 110px;gap:6px;
   padding:11px 18px;background:var(--bg2);
