@@ -3,9 +3,11 @@
 // =============================================
 let kategorier = [], produkter = [], ordrer = [], tavolina = [];
 let erAdmin = false;
+let aktivBruger = null; // {id, navn, rolle} — current session user
 let pinInput = '';
 let pinMod = 'login'; // 'login' | 'pin-ri' | 'pin-konfirmo'
 let pinRiTemp = '';
+let bpPinInput = '', bpZgjedhurBrugerId = null;
 
 function getPinKod(){ return localStorage.getItem('artizano_pin')||'88888888'; }
 
@@ -14,7 +16,7 @@ function getPinKod(){ return localStorage.getItem('artizano_pin')||'88888888'; }
 // =============================================
 function toggleAdmin(){
   if(erAdmin){ logoutAdmin(); }
-  else{ hapLoginModalNormal(); }
+  else{ hapBrugerPicker(); }
 }
 
 function hapLoginModalNormal(){
@@ -70,6 +72,7 @@ function konfirmoPin(){
   if(pinMod==='login'){
     if(pinInput===getPinKod()){
       erAdmin=true;
+      aktivBruger={id:'_admin',navn:'Admin',rolle:'admin'};
       mbyllModal('login-modal');
       document.getElementById('admin-btn').textContent='🔓 Admin';
       document.getElementById('admin-btn').classList.add('aktiv');
@@ -109,10 +112,11 @@ function konfirmoPin(){
 
 function logoutAdmin(){
   erAdmin=false;
+  aktivBruger=null;
   document.getElementById('admin-btn').textContent='🔒 Hyr';
   document.getElementById('admin-btn').classList.remove('aktiv');
   if(document.getElementById('produkter-side').classList.contains('aktiv')) skiftTab('pos');
-  visToast('Dolët nga Admin');
+  visToast('Dolët nga sistemi');
 }
 
 function kerkoPinAdmin(fnPasCeses){
@@ -120,6 +124,99 @@ function kerkoPinAdmin(fnPasCeses){
   if(erAdmin){ fnPasCeses(); return; }
   hapLoginModalNormal();
   visToast('Keni nevojë për login Admin!','gabim');
+}
+
+// ─── BRUGER PICKER ────────────────────────────────
+function hapBrugerPicker(){
+  const aktive=brugere.filter(b=>b.aktiv);
+  if(!aktive.length){hapLoginModalNormal();return}
+  const grid=document.getElementById('bp-brugere-grid');
+  grid.innerHTML=aktive.map((b,i)=>{
+    const init=b.navn.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    const clr=BRUGER_COLORS[i%BRUGER_COLORS.length];
+    return `<button class="bp-bruger-btn" onclick="bpZgjedhBrugerin('${b.id}')">
+      <div class="bp-avatar" style="background:${clr}">${init}</div>
+      <div class="bp-emri">${b.navn}</div>
+      <div class="bp-rol">${b.rolle==='admin'?'Admin':'Kamerier'}</div>
+    </button>`;
+  }).join('');
+  const wrap=document.getElementById('bp-logout-wrap');
+  if(wrap){
+    if(aktivBruger||erAdmin){
+      const name=aktivBruger?.navn||'Admin';
+      document.getElementById('bp-logout-btn').textContent=`↩ Dil (${name})`;
+      wrap.style.display='block';
+    } else {
+      wrap.style.display='none';
+    }
+  }
+  bpVisLista();
+  document.getElementById('bruger-picker-modal').classList.add('vis');
+}
+function bpZgjedhBrugerin(id){
+  bpZgjedhurBrugerId=id;
+  bpPinInput='';
+  const b=brugere.find(x=>x.id===id);
+  if(!b) return;
+  const aktive=brugere.filter(x=>x.aktiv);
+  const idx=aktive.findIndex(x=>x.id===id);
+  const clr=BRUGER_COLORS[idx>=0?idx%BRUGER_COLORS.length:0];
+  const init=b.navn.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  document.getElementById('bp-pin-avatar').style.background=clr;
+  document.getElementById('bp-pin-avatar').textContent=init;
+  document.getElementById('bp-pin-emri').textContent=b.navn;
+  document.getElementById('bp-pin-roli').textContent=b.rolle==='admin'?'Administrator':'Kamerier';
+  document.getElementById('bp-pin-gabim').style.display='none';
+  bpRifreshoPinDisplay();
+  document.getElementById('bp-lista').style.display='none';
+  document.getElementById('bp-pin').style.display='block';
+  document.getElementById('bp-titulli').textContent='🔐 PIN';
+}
+function bpPinShto(c){
+  if(bpPinInput.length>=4) return;
+  bpPinInput+=c;
+  bpRifreshoPinDisplay();
+  if(bpPinInput.length===4) setTimeout(bpKonfirmoPin,180);
+}
+function bpPinFshi(){bpPinInput=bpPinInput.slice(0,-1);bpRifreshoPinDisplay()}
+function bpRifreshoPinDisplay(){
+  const d=document.getElementById('bp-pin-dots');
+  if(!d) return;
+  d.innerHTML='';
+  for(let i=0;i<4;i++){const dot=document.createElement('div');dot.className='pin-dot'+(i<bpPinInput.length?' mbushur':'');d.appendChild(dot)}
+}
+async function bpKonfirmoPin(){
+  const b=brugere.find(x=>x.id===bpZgjedhurBrugerId);
+  if(!b) return;
+  const hash=await hashPin(bpPinInput);
+  if(hash===b.pin_hash){
+    aktivBruger={id:b.id,navn:b.navn,rolle:b.rolle};
+    erAdmin=(b.rolle==='admin');
+    mbyllModal('bruger-picker-modal');
+    const btn=document.getElementById('admin-btn');
+    if(erAdmin){btn.textContent='🔓 Admin';btn.classList.add('aktiv')}
+    else{btn.textContent=`👤 ${b.navn}`;btn.classList.add('aktiv')}
+    visToast(`Mirë se vini, ${b.navn}! ✓`);
+    bpPinInput='';bpZgjedhurBrugerId=null;
+  } else {
+    const g=document.getElementById('bp-pin-gabim');
+    g.textContent='❌ PIN i gabuar!';g.style.display='block';
+    bpPinInput='';bpRifreshoPinDisplay();
+  }
+}
+function bpVisLista(){
+  document.getElementById('bp-lista').style.display='block';
+  document.getElementById('bp-pin').style.display='none';
+  document.getElementById('bp-titulli').textContent='👥 Kush jeni?';
+  bpPinInput='';bpZgjedhurBrugerId=null;
+}
+function logoutStaff(){
+  aktivBruger=null;erAdmin=false;
+  const btn=document.getElementById('admin-btn');
+  btn.textContent='🔒 Hyr';btn.classList.remove('aktiv');
+  mbyllModal('bruger-picker-modal');
+  if(document.getElementById('produkter-side').classList.contains('aktiv')) skiftTab('pos');
+  visToast('Dolët nga sistemi');
 }
 
 function fshiHistorikun(){
@@ -380,12 +477,12 @@ function skiftTab(tab) {
   if(tab==='ventende') genindlaesVentende();
   if(tab==='produkter'){
     if(!erAdmin){
-      // Ruaj skedën aktive dhe hap login
+      // Redirect to POS — non-admin staff have no access here
       document.querySelectorAll('.tab').forEach(t=>t.classList.remove('aktiv'));
       document.querySelectorAll('.side').forEach(s=>s.classList.remove('aktiv'));
       document.querySelector('.tab').classList.add('aktiv');
       document.getElementById('pos-side').classList.add('aktiv');
-      hapLoginModalNormal();
+      if(!aktivBruger) hapLoginModalNormal(); // nobody logged in → offer admin login
       visToast('🔒 Keni nevojë për login Admin!','gabim');
       return;
     }
@@ -595,6 +692,7 @@ function opretBestilling(){
     bord:bord||'–', note:note, betaling:null,
     subtotal:total, moms:parseFloat((total*0.18).toFixed(2)), total,
     oprettet:new Date().toISOString(), betalt:null,
+    bruger_id:aktivBruger?.id||null, bruger_navn:aktivBruger?.navn||null,
     items:kurv.map(i=>({...i})),
     log:[]
   };
@@ -686,6 +784,9 @@ function ktheOrdrenNgaCelebration(){
 function ktheOrdren(id){
   const o=ordrer.find(x=>x.id===id);
   if(!o) return;
+  const nga=aktivBruger?.navn||'Admin';
+  const koha=new Date().toLocaleTimeString('sq-AL',{hour:'2-digit',minute:'2-digit'});
+  o.note=(o.note?o.note+'\n':'')+'🔧 '+koha+' '+nga+': ktheu pagesën';
   o.status='aaben';
   o.betaling=null;
   o.betalt=null;
@@ -910,7 +1011,7 @@ function renderAabneBorde(){
           📋 ${log.length} ndryshim${log.length!==1?'e':''}
         </div>
         <div class="log-entries" id="log-entries-${ord.id}" style="display:none">
-          ${log.map(l=>`<div class="log-entry ${l.lloji}"><span class="log-koha">${new Date(l.koha).toLocaleTimeString('sq-AL',{hour:'2-digit',minute:'2-digit'})}</span><span class="log-tekst">${l.pershkrim}</span></div>`).join('')}
+          ${log.map(l=>`<div class="log-entry ${l.lloji}"><span class="log-koha">${new Date(l.koha).toLocaleTimeString('sq-AL',{hour:'2-digit',minute:'2-digit'})}${l.nga?` · ${l.nga}`:''}</span><span class="log-tekst">${l.pershkrim}</span></div>`).join('')}
         </div>`:'';
       const ordKoha=new Date(ord.oprettet).toLocaleTimeString('sq-AL',{hour:'2-digit',minute:'2-digit'});
       const ordElapsed=elapsedStr(ord.oprettet);
@@ -1145,6 +1246,7 @@ function ruajNdryshimet(){
   if(!o) return;
 
   const tashme = new Date().toISOString();
+  const nga = aktivBruger?.navn || 'Admin';
   const njërit = {}; // map prodId→antal (para ndryshimit)
   o.items.forEach(i=>{ njërit[i.produkt_id] = {antal:i.antal, namn:i.produkt_navn} });
   const riLogje = [];
@@ -1163,21 +1265,21 @@ function ruajNdryshimet(){
     if(vjeter && !ri){
       // U hoq
       riLogje.push({
-        koha:tashme,
+        koha:tashme, nga,
         lloji:'heqje',
         pershkrim:`<span class="log-i-vjeter">${vjeter.antal}× ${emri}</span> → u hoq ❌`
       });
     } else if(!vjeter && ri){
       // U shtua
       riLogje.push({
-        koha:tashme,
+        koha:tashme, nga,
         lloji:'shtim',
         pershkrim:`${emri} u shtua (+${ri.antal}) ✅`
       });
     } else if(vjeter && ri && vjeter.antal !== ri.antal){
       // U ndryshua sasia
       riLogje.push({
-        koha:tashme,
+        koha:tashme, nga,
         lloji:'ndryshim',
         pershkrim:`${emri}: <span class="log-i-vjeter">${vjeter.antal} cop.</span> → ${ri.antal} cop. ✏️`
       });

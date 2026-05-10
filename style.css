@@ -1317,6 +1317,22 @@ body{
   border:1px solid var(--border);
 }
 
+/* ─── BRUGER PICKER ──────────────────────────────── */
+.bp-brugere-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+.bp-bruger-btn{
+  background:var(--bg);border:1.5px solid var(--border);border-radius:14px;
+  padding:16px 10px;display:flex;flex-direction:column;align-items:center;gap:7px;
+  cursor:pointer;transition:all .15s;text-align:center;font-family:inherit;width:100%;
+}
+.bp-bruger-btn:hover{border-color:var(--guld);background:#FFFBF2;transform:translateY(-2px)}
+.bp-avatar{
+  width:46px;height:46px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.15rem;font-weight:800;color:#fff;
+}
+.bp-emri{font-size:.88rem;font-weight:700;color:var(--tekst);line-height:1.3}
+.bp-rol{font-size:.7rem;color:var(--tekst-lys)}
+
 /* ─── PRINT ──────────────────────────────────────── */
 @media print{
   body *{visibility:hidden}

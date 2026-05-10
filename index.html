@@ -355,6 +355,50 @@
   </div>
 </div>
 
+<!-- BRUGER PICKER MODAL -->
+<div class="modal-overlay" id="bruger-picker-modal">
+  <div class="modal" style="max-width:360px">
+    <h2 id="bp-titulli">👥 Kush jeni?</h2>
+    <!-- VIEW 1: user list -->
+    <div id="bp-lista">
+      <div class="bp-brugere-grid" id="bp-brugere-grid"></div>
+      <div id="bp-logout-wrap" style="display:none;margin-top:10px">
+        <button class="modal-annuller" id="bp-logout-btn" style="width:100%;border-color:#FECACA;color:var(--roed)" onclick="logoutStaff()">↩ Dil</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin:14px 0 10px;color:var(--tekst-lys);font-size:.78rem">
+        <div style="flex:1;height:1px;background:var(--border)"></div>ose<div style="flex:1;height:1px;background:var(--border)"></div>
+      </div>
+      <button class="modal-annuller" style="width:100%" onclick="mbyllModal('bruger-picker-modal');hapLoginModalNormal()">🔒 Admin PIN (8 shifra)</button>
+    </div>
+    <!-- VIEW 2: PIN entry -->
+    <div id="bp-pin" style="display:none">
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px">
+        <div id="bp-pin-avatar" style="width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.2rem;font-weight:800;color:#fff;flex-shrink:0"></div>
+        <div>
+          <div id="bp-pin-emri" style="font-weight:700;font-size:.98rem;color:var(--tekst)"></div>
+          <div id="bp-pin-roli" style="font-size:.75rem;color:var(--tekst-lys);margin-top:2px"></div>
+        </div>
+      </div>
+      <div class="pin-dots" id="bp-pin-dots"></div>
+      <div class="pin-gabim" id="bp-pin-gabim"></div>
+      <div class="pin-numpad">
+        <button class="pn-btn" onclick="bpPinShto('1')">1</button>
+        <button class="pn-btn" onclick="bpPinShto('2')">2</button>
+        <button class="pn-btn" onclick="bpPinShto('3')">3</button>
+        <button class="pn-btn" onclick="bpPinShto('4')">4</button>
+        <button class="pn-btn" onclick="bpPinShto('5')">5</button>
+        <button class="pn-btn" onclick="bpPinShto('6')">6</button>
+        <button class="pn-btn" onclick="bpPinShto('7')">7</button>
+        <button class="pn-btn" onclick="bpPinShto('8')">8</button>
+        <button class="pn-btn" onclick="bpPinShto('9')">9</button>
+        <button class="pn-btn fshi" onclick="bpPinFshi()">⌫</button>
+        <button class="pn-btn zero" onclick="bpPinShto('0')">0</button>
+      </div>
+      <button class="modal-annuller" style="width:100%;margin-top:8px" onclick="bpVisLista()">← Kthehu</button>
+    </div>
+  </div>
+</div>
+
 <!-- TAVOLINA MODAL -->
 <div class="modal-overlay" id="tavolina-modal">
   <div class="modal">
