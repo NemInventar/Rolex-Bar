@@ -1307,6 +1307,7 @@ function hapFature(ordre){
   let t=`        ARTIZANO\n     Eat & More\n${S}\n`;
   t+=`Data: ${ds}\nPorosi nr.: #${ordre.ordre_nummer}\n`;
   if(ordre.bord&&ordre.bord!=='–') t+=`Tavolina: ${ordre.bord}\n`;
+  if(ordre.bruger_navn) t+=`Kamarieri: ${ordre.bruger_navn}\n`;
   t+=`${S}\n`;
   ordre.items.forEach(i=>{const nm=(i.antal+'× '+i.produkt_navn).slice(0,22);const pr=euro(i.produkt_pris*i.antal);t+=nm.padEnd(32-pr.length,' ')+pr+'\n'});
   t+=`${S}\n`;
@@ -1332,6 +1333,7 @@ function printFature(){
     <div style="border-top:1px dashed #000;margin:5px 0"></div>
     <div>Data: ${ds}</div><div>Porosi: #${o.ordre_nummer}</div>
     ${o.bord&&o.bord!=='–'?`<div>Tavolina: ${o.bord}</div>`:''}
+    ${o.bruger_navn?`<div>Kamarieri: ${o.bruger_navn}</div>`:''}
     <div style="border-top:1px dashed #000;margin:5px 0"></div>
     ${o.items.map(i=>`<div style="display:flex;justify-content:space-between"><span>${i.antal}× ${i.produkt_navn}</span><span>${euro(i.produkt_pris*i.antal)}</span></div>`).join('')}
     <div style="border-top:1px solid #000;margin:5px 0"></div>
