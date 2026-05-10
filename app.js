@@ -1756,6 +1756,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     opdaterAabneBadge();
   }, 8000);
 
+  // Keyboard support for cash modal
+  document.addEventListener('keydown', e=>{
+    if(!document.getElementById('kesh-modal').classList.contains('vis')) return;
+    if(e.key>='0'&&e.key<='9'){e.preventDefault();numpadShto(e.key)}
+    else if(e.key==='.'||e.key===','){e.preventDefault();numpadShto('.')}
+    else if(e.key==='Backspace'){e.preventDefault();numpadBack()}
+    else if(e.key==='Delete'){e.preventDefault();numpadFshi()}
+    else if(e.key==='Enter'){e.preventDefault();const b=document.getElementById('kesh-konfirmo-btn');if(!b.disabled)konfirmoPagesaKesh()}
+    else if(e.key==='Escape'){e.preventDefault();mbyllModal('kesh-modal')}
+  });
+
   // Realtime subscription for live order updates
   sb.channel('ordrer-live')
     .on('postgres_changes',
