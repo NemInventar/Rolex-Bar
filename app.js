@@ -954,6 +954,7 @@ function renderAabneBorde(){
           <div class="tv-ordri-head">
             <span class="tv-ordri-nr">${shumePorosi?`Rund ${idx+1}`:`Porosi #${ord.ordre_nummer}`}</span>
             <div class="tv-ordri-meta">
+              ${ord.bruger_navn?`<span class="tv-tjener">👤 ${ord.bruger_navn}</span>`:''}
               ${shumePorosi?'':`<span>#${ord.ordre_nummer}</span>`}
               <span class="tv-ordri-elapsed">⏱ ${ordElapsed}</span>
             </div>
@@ -1265,7 +1266,7 @@ function genindlaesVentende(){
   else if(badge) badge.remove();
   if(!ventende.length){c.innerHTML='<div class="ingen-data">✓ Nuk ka porosi nga mobili.</div>';return}
   c.innerHTML=`<div class="ordrer-grid">${ventende.map(o=>`<div class="ordre-kort">
-    <div class="ok-header"><span class="ok-nr">Porosi #${o.ordre_nummer}</span><span class="ok-kilde">Mobil</span><span class="ok-tid">${formatData(o.oprettet)}</span></div>
+    <div class="ok-header"><span class="ok-nr">Porosi #${o.ordre_nummer}</span><span class="ok-kilde">Mobil</span>${o.bruger_navn?`<span class="ok-tjener">👤 ${o.bruger_navn}</span>`:''}<span class="ok-tid">${formatData(o.oprettet)}</span></div>
     <div class="ok-body">
       ${o.bord&&o.bord!=='–'?`<div style="font-size:.8rem;color:var(--tekst-lys);margin-bottom:5px">🪑 Tavolina: <strong>${o.bord}</strong></div>`:''}
       ${o.items.map(i=>`<div class="ok-item"><span>${i.antal}× ${i.produkt_navn}</span><span>${euro(i.produkt_pris*i.antal)}</span></div>`).join('')}

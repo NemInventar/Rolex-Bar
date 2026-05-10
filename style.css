@@ -574,7 +574,8 @@ body{
 .tv-ordri{padding:12px 18px;border-bottom:1px solid var(--border)}
 .tv-ordri-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
 .tv-ordri-nr{font-size:.72rem;font-weight:700;color:var(--tekst-lys);text-transform:uppercase;letter-spacing:.5px}
-.tv-ordri-meta{font-size:.72rem;color:var(--tekst-lys);display:flex;align-items:center;gap:8px}
+.tv-ordri-meta{font-size:.72rem;color:var(--tekst-lys);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.tv-tjener{font-size:.68rem;padding:2px 8px;border-radius:99px;background:#EDE9FE;color:#5B21B6;font-weight:600}
 .tv-ordri-elapsed{
   background:var(--bg2);
   padding:2px 9px;
@@ -762,6 +763,10 @@ body{
 .ok-kilde{
   font-size:.68rem;padding:3px 9px;border-radius:99px;
   background:var(--guld);color:#fff;font-weight:700;
+}
+.ok-tjener{
+  font-size:.73rem;padding:3px 10px;border-radius:99px;
+  background:#EDE9FE;color:#5B21B6;font-weight:600;
 }
 .ok-body{padding:13px 16px}
 .ok-item{display:flex;justify-content:space-between;font-size:.83rem;padding:4px 0}
