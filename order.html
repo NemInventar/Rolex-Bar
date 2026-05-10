@@ -327,13 +327,90 @@
     font-family:inherit;
   }
   #toast.vis{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  /* ── LOGIN SCREEN ── */
+  #login-ekran{
+    position:fixed;inset:0;z-index:9999;
+    background:var(--brun);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    padding:28px 20px;gap:0;
+  }
+  .ls-logo{font-size:1.7rem;font-weight:900;color:#fff;letter-spacing:-.3px;margin-bottom:4px}
+  .ls-logo span{color:var(--guld-lys);font-weight:400}
+  #ls-sub{color:rgba(255,255,255,.65);font-size:.88rem;margin-bottom:28px;text-align:center}
+  #ls-user-grid{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));
+    gap:12px;width:100%;max-width:520px;
+  }
+  .ls-user-btn{
+    background:rgba(255,255,255,.1);border:2px solid rgba(255,255,255,.14);
+    border-radius:18px;padding:20px 12px;cursor:pointer;
+    display:flex;flex-direction:column;align-items:center;gap:10px;
+    transition:all .13s;font-family:inherit;
+  }
+  .ls-user-btn:active{transform:scale(.95);background:rgba(255,255,255,.2)}
+  .ls-avatar{
+    width:54px;height:54px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-size:1.35rem;font-weight:800;color:#fff;
+  }
+  .ls-user-navn{font-size:.88rem;font-weight:700;color:#fff;text-align:center}
+  .ls-user-rolle{font-size:.72rem;color:rgba(255,255,255,.55)}
+  /* PIN pad */
+  #ls-pin-wrap{display:none;flex-direction:column;align-items:center;gap:18px;width:100%;max-width:300px}
+  #ls-pin-wrap.vis{display:flex}
+  #ls-pin-emri{font-size:1rem;font-weight:700;color:#fff}
+  .ls-pin-dots{display:flex;gap:14px}
+  .ls-dot{width:16px;height:16px;border-radius:50%;border:2px solid rgba(255,255,255,.35);transition:all .15s}
+  .ls-dot.on{background:var(--guld);border-color:var(--guld)}
+  #ls-pin-gabim{color:#FF7675;font-size:.82rem;font-weight:600;min-height:18px;text-align:center}
+  .ls-numpad{display:grid;grid-template-columns:repeat(3,80px);gap:10px}
+  .ls-numpad button{
+    height:60px;background:rgba(255,255,255,.12);border:none;border-radius:14px;
+    font-size:1.3rem;font-weight:700;color:#fff;cursor:pointer;
+    font-family:inherit;transition:background .1s;
+  }
+  .ls-numpad button:active{background:rgba(255,255,255,.28)}
+  .ls-back-btn{font-size:.82rem!important;color:rgba(255,255,255,.6)!important;letter-spacing:.3px}
+  .ls-del-btn{font-size:1.1rem!important}
+  /* User badge in header */
+  #ls-bruger-badge{
+    display:none;align-items:center;gap:6px;
+    background:rgba(255,255,255,.15);border-radius:20px;
+    padding:5px 12px;font-size:.78rem;font-weight:700;color:#fff;
+    cursor:pointer;border:none;font-family:inherit;
+  }
+  #ls-bruger-badge:active{background:rgba(255,255,255,.28)}
 </style>
 </head>
 <body>
 
+<!-- LOGIN SCREEN -->
+<div id="login-ekran">
+  <div class="ls-logo">Artizano <span>Porosi</span></div>
+  <div id="ls-sub">Identifikoni veten për të vazhduar</div>
+  <div id="ls-user-grid"></div>
+  <div id="ls-pin-wrap">
+    <div id="ls-pin-emri"></div>
+    <div class="ls-pin-dots" id="ls-pin-dots"></div>
+    <div id="ls-pin-gabim"></div>
+    <div class="ls-numpad">
+      <button onclick="lsPinShto('1')">1</button><button onclick="lsPinShto('2')">2</button><button onclick="lsPinShto('3')">3</button>
+      <button onclick="lsPinShto('4')">4</button><button onclick="lsPinShto('5')">5</button><button onclick="lsPinShto('6')">6</button>
+      <button onclick="lsPinShto('7')">7</button><button onclick="lsPinShto('8')">8</button><button onclick="lsPinShto('9')">9</button>
+      <button class="ls-back-btn" onclick="lsKthehu()">← Kthehu</button>
+      <button onclick="lsPinShto('0')">0</button>
+      <button class="ls-del-btn" onclick="lsPinFshi()">⌫</button>
+    </div>
+  </div>
+</div>
+
 <div id="header">
   <h1>Artizano <span>Porosi</span></h1>
-  <div id="kurv-badge">0</div>
+  <div style="display:flex;align-items:center;gap:10px">
+    <button id="ls-bruger-badge" onclick="lsLogout()"></button>
+    <div id="kurv-badge">0</div>
+  </div>
 </div>
 
 <div id="loading"><div class="spinner"></div><span>Duke ngarkuar...</span></div>
@@ -406,8 +483,102 @@ const SUPABASE_URL = 'https://tsaxlluggcxdrvapaypp.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRzYXhsbHVnZ2N4ZHJ2YXBheXBwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzNTU0MTAsImV4cCI6MjA5MzkzMTQxMH0.bIXF0dXrWSgtpYCpNzZz5Rh5BB_0R37dzNp_8jgFZGM';
 const RESTAURANT_ID = '0860de87-efd6-4ef4-b191-7635bc44e866';
 
-let sb, kategorier=[], produkter=[], tavolina=[];
+let sb, kategorier=[], produkter=[], tavolina=[], brugere=[];
 let kurv=[], aktivKat='alle', valgBord=null, aktivZone='brendshëm';
+let loggedInBruger=null, _lsPinBruger=null, _lsPin='';
+
+// ── AUTH HELPERS ──
+async function hashPin(pin){
+  const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(pin));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+const LS_COLORS=['#E74C3C','#E67E22','#27AE60','#2980B9','#8E44AD','#16A085','#C0392B','#1ABC9C'];
+
+function renderLoginScreen(){
+  const grid=document.getElementById('ls-user-grid');
+  if(!brugere.length){
+    // No users yet — bypass login
+    lsVizatoApp();
+    return;
+  }
+  grid.innerHTML=brugere.map((b,i)=>`
+    <button class="ls-user-btn" onclick="lsValgBruger(${i})">
+      <div class="ls-avatar" style="background:${LS_COLORS[i%LS_COLORS.length]}">${b.navn.charAt(0).toUpperCase()}</div>
+      <div class="ls-user-navn">${b.navn}</div>
+      <div class="ls-user-rolle">${b.rolle==='admin'?'Administrator':'Kamerier'}</div>
+    </button>`).join('');
+  document.getElementById('login-ekran').style.display='flex';
+}
+
+function lsValgBruger(idx){
+  _lsPinBruger=brugere[idx];
+  _lsPin='';
+  document.getElementById('ls-pin-emri').textContent='👤 '+_lsPinBruger.navn;
+  document.getElementById('ls-pin-gabim').textContent='';
+  document.getElementById('ls-user-grid').style.display='none';
+  document.getElementById('ls-sub').style.display='none';
+  document.getElementById('ls-pin-wrap').classList.add('vis');
+  lsRefreshDots();
+}
+
+function lsKthehu(){
+  _lsPin='';_lsPinBruger=null;
+  document.getElementById('ls-user-grid').style.display='grid';
+  document.getElementById('ls-sub').style.display='block';
+  document.getElementById('ls-pin-wrap').classList.remove('vis');
+}
+
+function lsPinShto(c){
+  if(_lsPin.length>=4) return;
+  _lsPin+=c;
+  lsRefreshDots();
+  if(_lsPin.length===4) setTimeout(lsKonfirmo,200);
+}
+
+function lsPinFshi(){_lsPin=_lsPin.slice(0,-1);lsRefreshDots()}
+
+function lsRefreshDots(){
+  document.getElementById('ls-pin-dots').innerHTML=[0,1,2,3].map(i=>`<div class="ls-dot${i<_lsPin.length?' on':''}"></div>`).join('');
+}
+
+async function lsKonfirmo(){
+  const hash=await hashPin(_lsPin);
+  if(hash===_lsPinBruger.pin_hash){
+    loggedInBruger={id:_lsPinBruger.id,navn:_lsPinBruger.navn,rolle:_lsPinBruger.rolle};
+    sessionStorage.setItem('artizano_bruger',JSON.stringify(loggedInBruger));
+    lsVizatoApp();
+  } else {
+    document.getElementById('ls-pin-gabim').textContent='❌ PIN i gabuar!';
+    _lsPin='';lsRefreshDots();
+    setTimeout(()=>{document.getElementById('ls-pin-gabim').textContent=''},1800);
+  }
+}
+
+function lsVizatoApp(){
+  document.getElementById('login-ekran').style.display='none';
+  if(loggedInBruger){
+    const badge=document.getElementById('ls-bruger-badge');
+    badge.textContent='👤 '+loggedInBruger.navn;
+    badge.style.display='flex';
+  }
+  const app=document.getElementById('app');
+  app.style.cssText='display:flex;flex-direction:column;flex:1';
+  renderBorde();renderKat();renderGrid();
+}
+
+function lsLogout(){
+  if(!confirm('Dilni nga sesioni i '+loggedInBruger.navn+'?')) return;
+  loggedInBruger=null;
+  sessionStorage.removeItem('artizano_bruger');
+  _lsPin='';_lsPinBruger=null;
+  document.getElementById('ls-bruger-badge').style.display='none';
+  document.getElementById('app').style.display='none';
+  document.getElementById('ls-user-grid').style.display='grid';
+  document.getElementById('ls-sub').style.display='block';
+  document.getElementById('ls-pin-wrap').classList.remove('vis');
+  renderLoginScreen();
+}
 
 function euro(v){return Number(v).toFixed(2).replace('.',',')+' €'}
 function unikID(){return 'id_'+Date.now()+'_'+Math.random().toString(36).slice(2,7)}
@@ -419,24 +590,25 @@ function madhesia(emri){const m=emri.match(/\(([SML])\)\s*$/);return m?m[1]:null
 // ── LOAD ──
 async function init(){
   sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-  const [katRes, prodRes, tavRes] = await Promise.all([
+  const [katRes, prodRes, tavRes, brugerRes] = await Promise.all([
     sb.from('kategorier').select('*').eq('restaurant_id',RESTAURANT_ID).order('sort'),
     sb.from('produkter').select('*').eq('restaurant_id',RESTAURANT_ID),
-    sb.from('tavolina').select('*').eq('restaurant_id',RESTAURANT_ID)
+    sb.from('tavolina').select('*').eq('restaurant_id',RESTAURANT_ID),
+    sb.from('brugere').select('id,navn,rolle,pin_hash').eq('restaurant_id',RESTAURANT_ID).eq('aktiv',true).order('oprettet')
   ]);
   kategorier = katRes.data || [];
   produkter  = prodRes.data || [];
   tavolina   = tavRes.data || [];
+  brugere    = brugerRes.data || [];
 
   document.getElementById('loading').style.display='none';
-  const app=document.getElementById('app');
-  app.style.display='flex';
-  app.style.flexDirection='column';
-  app.style.flex='1';
 
-  renderBorde();
-  renderKat();
-  renderGrid();
+  const saved=sessionStorage.getItem('artizano_bruger');
+  if(saved){
+    try{loggedInBruger=JSON.parse(saved)}catch(e){sessionStorage.removeItem('artizano_bruger')}
+  }
+  if(loggedInBruger){lsVizatoApp()}
+  else{renderLoginScreen()}
 }
 
 // ── BORDE ──
@@ -644,7 +816,9 @@ async function dergoBestillim(){
       moms: parseFloat((total*0.18).toFixed(2)),
       total,
       oprettet: new Date().toISOString(),
-      betalt: null
+      betalt: null,
+      bruger_id: loggedInBruger?.id||null,
+      bruger_navn: loggedInBruger?.navn||null
     });
     if(ordErr) throw ordErr;
 

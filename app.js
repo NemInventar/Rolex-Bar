@@ -76,7 +76,7 @@ function konfirmoPin(){
       visToast('Mirë se vini, Admin! 🔓');
       pinInput='';
     } else {
-      tregoPinGabim('❌ Kod i gabuar! Provoni sërish.');
+      tregoPinGabim('❌ Kod i gabuar! Provoni sërish - ma ha karrin.');
     }
     return;
   }
@@ -143,6 +143,7 @@ function fshiNjeOrdre(id){
   visToast(`Porosi #${o.ordre_nummer} u fshi ✓`);
 }
 let kurv = [], aktivKategori = 'alle';
+let brugere = [];
 let aktivPeriode = 'dag', periodeChart = null;
 let keshAmount = '', keshOrdreId = null, keshGjithaBord = null;
 let celebrationOrdreId = null;
@@ -305,11 +306,12 @@ async function _syncTavolinaToSupabase() {
 }
 
 async function loadData() {
-  const [katRes, prodRes, ordRes, tavRes] = await Promise.all([
+  const [katRes, prodRes, ordRes, tavRes, brugerRes] = await Promise.all([
     sb.from('kategorier').select('*').eq('restaurant_id', RESTAURANT_ID).order('sort'),
     sb.from('produkter').select('*').eq('restaurant_id', RESTAURANT_ID),
     sb.from('ordrer').select('*, ordre_linjer(*)').eq('restaurant_id', RESTAURANT_ID).in('status',['aaben','ventende']).order('oprettet'),
-    sb.from('tavolina').select('*').eq('restaurant_id', RESTAURANT_ID)
+    sb.from('tavolina').select('*').eq('restaurant_id', RESTAURANT_ID),
+    sb.from('brugere').select('*').eq('restaurant_id', RESTAURANT_ID).order('oprettet')
   ]);
   kategorier = katRes.data || [];
   produkter = prodRes.data || [];
@@ -325,6 +327,7 @@ async function loadData() {
     log: []
   }));
   tavolina = tavRes.data || [];
+  brugere = brugerRes.data || [];
 }
 
 async function initTavolinat() {
@@ -368,6 +371,7 @@ function skiftTab(tab) {
     }
     opdaterOmsaetning();
     opdaterShitjetProdukt();
+    opdaterShitjetPersonel();
   }
   if(tab==='historik') opdaterHistorik();
   if(tab==='ventende') genindlaesVentende();
@@ -383,6 +387,7 @@ function skiftTab(tab) {
       return;
     }
     renderAdminProdukter();
+    renderBrugereAdmin();
   }
 }
 
@@ -1398,6 +1403,7 @@ async function opdaterShitjetProdukt(){
   }));
   _shitjetData=Object.values(agg);
   renderShitjet();
+  opdaterShitjetPersonel();
 }
 function renderShitjet(){
   const liste=document.getElementById('produkt-shitje-liste');
@@ -1419,6 +1425,111 @@ function eksporterCSV(){
   let csv='Porosi,Data,Totali,Pagesa,Artikujt\n';
   ordrer.filter(o=>o.status==='betalt').forEach(o=>{const it=o.items.map(i=>i.antal+'x '+i.produkt_navn).join(' | ');csv+=`${o.ordre_nummer},"${formatData(o.oprettet)}",${o.total.toFixed(2)},${o.betaling},"${it}"\n`});
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));a.download=`artizano_${sotDita()}.csv`;a.click();
+}
+
+// ─── PERSONELI (USER MANAGEMENT) ─────────────
+async function hashPin(pin){
+  const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(pin));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+const BRUGER_COLORS=['#E74C3C','#E67E22','#27AE60','#2980B9','#8E44AD','#16A085','#C0392B','#1ABC9C'];
+
+function renderBrugereAdmin(){
+  const liste=document.getElementById('personel-liste');
+  if(!liste) return;
+  if(!brugere.length){
+    liste.innerHTML='<div style="color:var(--tekst-lys);font-size:.85rem;padding:12px 0">Nuk ka personel. Shto personin e parë me butonin +.</div>';
+    return;
+  }
+  liste.innerHTML=brugere.map((b,i)=>`
+    <div class="pers-raekke">
+      <div class="pers-avatar" style="background:${BRUGER_COLORS[i%BRUGER_COLORS.length]}">${b.navn.charAt(0).toUpperCase()}</div>
+      <div class="pers-info">
+        <div class="pers-emri">${b.navn}</div>
+        <div class="pers-meta">${b.rolle==='admin'?'Administrator':'Kamerier'} · <span style="color:${b.aktiv?'var(--groen)':'var(--roed)'}">${b.aktiv?'Aktiv':'Joaktiv'}</span></div>
+      </div>
+      <div class="pers-btns">
+        <button class="tilfoej-btn" style="font-size:.78rem;padding:6px 12px" onclick="hapBrugerModal('${b.id}')">✏️ Ndrysho</button>
+        <button class="tilfoej-btn" style="font-size:.78rem;padding:6px 12px;background:${b.aktiv?'var(--roed)':'var(--groen)'}" onclick="toggleBrugerAktiv('${b.id}',${b.aktiv})">${b.aktiv?'Çaktivo':'Aktivo'}</button>
+      </div>
+    </div>`).join('');
+}
+
+function hapBrugerModal(id=null){
+  if(!erAdmin){visToast('🔒 Vetëm Admin!','gabim');return}
+  const b=id?brugere.find(x=>x.id===id):null;
+  document.getElementById('bm-id').value=b?.id||'';
+  document.getElementById('bm-titel').textContent=b?'Ndrysho personin':'Person i ri';
+  document.getElementById('bm-navn').value=b?.navn||'';
+  document.getElementById('bm-rolle').value=b?.rolle||'tjener';
+  document.getElementById('bm-pin').value='';
+  document.getElementById('bm-pin2').value='';
+  document.getElementById('bm-gabim').style.display='none';
+  document.getElementById('bm-pin-label').textContent=b?'PIN i ri (lëre bosh për ta mbajtur)':'PIN (4 shifra)';
+  document.getElementById('bruger-modal').classList.add('vis');
+}
+
+async function ruajBruger(){
+  const id=document.getElementById('bm-id').value;
+  const navn=document.getElementById('bm-navn').value.trim();
+  const rolle=document.getElementById('bm-rolle').value;
+  const pin=document.getElementById('bm-pin').value;
+  const pin2=document.getElementById('bm-pin2').value;
+  const gabimEl=document.getElementById('bm-gabim');
+  gabimEl.style.display='none';
+  if(!navn){gabimEl.textContent='Emri është i detyrueshëm';gabimEl.style.display='block';return}
+  let pin_hash=null;
+  if(pin||!id){
+    if(!pin){gabimEl.textContent='PIN-i është i detyrueshëm';gabimEl.style.display='block';return}
+    if(!/^\d{4}$/.test(pin)){gabimEl.textContent='PIN-i duhet të jetë saktësisht 4 shifra';gabimEl.style.display='block';return}
+    if(pin!==pin2){gabimEl.textContent='PIN-et nuk përputhen';gabimEl.style.display='block';return}
+    pin_hash=await hashPin(pin);
+  }
+  const row={restaurant_id:RESTAURANT_ID,navn,rolle,...(pin_hash?{pin_hash}:{})};
+  let error;
+  if(id){({error}=await sb.from('brugere').update(row).eq('id',id))}
+  else{({error}=await sb.from('brugere').insert({...row,aktiv:true}))}
+  if(error){gabimEl.textContent='Gabim: '+error.message;gabimEl.style.display='block';return}
+  mbyllModal('bruger-modal');
+  const {data}=await sb.from('brugere').select('*').eq('restaurant_id',RESTAURANT_ID).order('oprettet');
+  brugere=data||[];
+  renderBrugereAdmin();
+  visToast(id?'✓ I ruajtur':'✓ Personi u shtua');
+}
+
+async function toggleBrugerAktiv(id,aktiv){
+  const {error}=await sb.from('brugere').update({aktiv:!aktiv}).eq('id',id);
+  if(error){visToast('Gabim!','gabim');return}
+  brugere=brugere.map(b=>b.id===id?{...b,aktiv:!aktiv}:b);
+  renderBrugereAdmin();
+  visToast(!aktiv?'✓ Aktivizuar':'Çaktivizuar');
+}
+
+// ─── PER-USER XHIRO ──────────────────────────
+async function opdaterShitjetPersonel(){
+  const fra=document.getElementById('ps-fra').value;
+  const til=document.getElementById('ps-til').value;
+  const liste=document.getElementById('personel-shitje-liste');
+  if(!liste) return;
+  liste.innerHTML='<div class="ps-loading">Duke ngarkuar...</div>';
+  let q=sb.from('ordrer').select('bruger_id,bruger_navn,total').eq('restaurant_id',RESTAURANT_ID).eq('status','betalt');
+  if(fra) q=q.gte('oprettet',_localIso(fra,'00:00:00'));
+  if(til) q=q.lte('oprettet',_localIso(til,'23:59:59'));
+  const {data,error}=await q;
+  if(error){liste.innerHTML='<div class="ps-loading" style="color:var(--roed)">Gabim</div>';return}
+  const agg={};
+  (data||[]).forEach(o=>{
+    const key=o.bruger_id||'_anon';
+    const navn=o.bruger_navn||'Pa caktuar';
+    if(!agg[key]) agg[key]={navn,porosi:0,xhiro:0};
+    agg[key].porosi++;
+    agg[key].xhiro+=parseFloat(o.total)||0;
+  });
+  const rows=Object.values(agg).sort((a,b)=>b.xhiro-a.xhiro);
+  if(!rows.length){liste.innerHTML='<div class="ps-loading">Nuk ka të dhëna</div>';return}
+  liste.innerHTML='<div class="ps-raekke ps-header-row"><span>Personi</span><span>Porosi</span><span>Xhiro</span></div>'+
+    rows.map((r,i)=>`<div class="ps-raekke${i%2?'':' alt'}"><span class="ps-namn">${r.navn}</span><span class="ps-antal">${r.porosi}</span><span class="ps-xhiro">${euro(r.xhiro)}</span></div>`).join('');
 }
 
 // =============================================

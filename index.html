@@ -114,6 +114,12 @@
       </div>
       <div id="produkt-shitje-liste"></div>
     </div>
+    <div class="produkt-shitje-boks" style="margin-top:16px">
+      <div class="ps-header">
+        <h3>👥 Shitjet sipas personelit</h3>
+      </div>
+      <div id="personel-shitje-liste"><div class="ps-loading">Zgjidhni datën për të parë të dhënat</div></div>
+    </div>
   </div>
 
   <!-- HISTORIKU -->
@@ -155,6 +161,15 @@
       </div>
     </div>
     <div id="produkt-admin-grid" class="prod-grid"></div>
+
+    <!-- PERSONELI -->
+    <div style="margin-top:32px;padding-top:24px;border-top:2px solid var(--border)">
+      <div class="side-header" style="padding:0 0 16px">
+        <h2>👥 Personeli</h2>
+        <button class="tilfoej-btn" onclick="hapBrugerModal()">+ Shto person</button>
+      </div>
+      <div id="personel-liste"></div>
+    </div>
   </div>
 
 </div>
@@ -240,6 +255,31 @@
     <button class="np-konfirmo" id="kesh-konfirmo-btn" onclick="konfirmoPagesaKesh()" disabled>✓ KONFIRMO PAGESËN</button>
     <div class="modal-btns" style="margin-top:10px">
       <button class="modal-annuller" onclick="mbyllModal('kesh-modal')">Anulo</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Bruger -->
+<div class="modal-overlay" id="bruger-modal">
+  <div class="modal">
+    <h2 id="bm-titel">Person i ri</h2>
+    <input type="hidden" id="bm-id">
+    <div class="form-gruppe"><label>Emri i plotë</label><input type="text" id="bm-navn" placeholder="p.sh. Arjun Salihu"></div>
+    <div class="form-gruppe"><label>Roli</label>
+      <select id="bm-rolle">
+        <option value="tjener">Kamerier</option>
+        <option value="admin">Administrator</option>
+      </select>
+    </div>
+    <div class="form-gruppe">
+      <label id="bm-pin-label">PIN (4 shifra)</label>
+      <input type="password" id="bm-pin" placeholder="••••" maxlength="4" inputmode="numeric" pattern="\d{4}">
+    </div>
+    <div class="form-gruppe"><label>Konfirmo PIN</label><input type="password" id="bm-pin2" placeholder="••••" maxlength="4" inputmode="numeric"></div>
+    <div id="bm-gabim" style="display:none;color:var(--roed);font-size:.83rem;font-weight:600;padding:8px;background:#FADBD8;border-radius:8px"></div>
+    <div class="modal-btns">
+      <button class="modal-annuller" onclick="mbyllModal('bruger-modal')">Anulo</button>
+      <button class="modal-gem" onclick="ruajBruger()">Ruaj</button>
     </div>
   </div>
 </div>
