@@ -1561,15 +1561,28 @@ async function renderKassaKontroll(){
         const cls=Math.abs(d)<0.005?'nul':d>0?'plus':'minus';
         diffHtml=`<span class="kassa-diff ${cls}">${d>=0?'+':''}${d.toFixed(2)} €</span>`;
       }
+      // Fillimi: editable if not yet set; locked once saved
+      const fillimCel = fillim===null
+        ? `<input class="kassa-inp" type="number" step="0.01" min="0" placeholder="0.00" onblur="ruajKassa('${b.id}','fillim',this.value,'${dato}')">`
+        : `<span class="kassa-locked">${fillim.toFixed(2)} €</span><span class="kassa-lock-ikon" title="E bllokuar">🔒</span>`+
+          (erAdmin?`<button class="kassa-unlock-btn" title="Ndrysho (Admin)" onclick="hapeLlojaKasses('${b.id}',${fillim},'${dato}')">✏️</button>`:'');
       return `<tr>
         <td><span class="kassa-avatar-sm" style="background:${BRUGER_COLORS[i%BRUGER_COLORS.length]}">${b.navn.charAt(0)}</span>${b.navn}</td>
-        <td style="text-align:right"><input class="kassa-inp" type="number" step="0.01" min="0" value="${fillim!==null?fillim.toFixed(2):''}" placeholder="0.00" onblur="ruajKassa('${b.id}','fillim',this.value,'${dato}')"></td>
+        <td id="kassa-fillim-${b.id}" style="text-align:right">${fillimCel}</td>
         <td class="kassa-shitje" style="text-align:right">${euro(shitje)}</td>
         <td style="text-align:right"><input class="kassa-inp" type="number" step="0.01" min="0" value="${fund!==null?fund.toFixed(2):''}" placeholder="0.00" onblur="ruajKassa('${b.id}','fund',this.value,'${dato}')"></td>
         <td style="text-align:right">${diffHtml}</td>
       </tr>`;
     }).join('')}</tbody>
   </table>`;
+}
+
+function hapeLlojaKasses(brugerId, currentVal, dato){
+  if(!erAdmin){visToast('🔒 Vetëm Admin mund ta ndryshojë fillimin!','gabim');return}
+  const cell=document.getElementById('kassa-fillim-'+brugerId);
+  cell.innerHTML=`<input class="kassa-inp" type="number" step="0.01" min="0" value="${parseFloat(currentVal).toFixed(2)}" onblur="ruajKassa('${brugerId}','fillim',this.value,'${dato}')">`;
+  cell.querySelector('input').focus();
+  cell.querySelector('input').select();
 }
 
 async function ruajKassa(brugerId,field,valStr,dato){
