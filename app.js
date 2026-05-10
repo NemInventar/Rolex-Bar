@@ -6,6 +6,7 @@ let erAdmin = false;
 let aktivBruger = null; // {id, navn, rolle} — current session user
 let _xhiroRel = []; // cached paid orders for current Xhiro period
 let _histArkivMod = false;
+let _kassaMbyllur = false;
 let pinInput = '';
 let pinMod = 'login'; // 'login' | 'pin-ri' | 'pin-konfirmo'
 let pinRiTemp = '';
@@ -1730,43 +1731,80 @@ async function renderKassaKontroll(){
   wrap.innerHTML='<div class="ps-loading">Duke ngarkuar...</div>';
   const aktive=brugere.filter(b=>b.aktiv);
   if(!aktive.length){wrap.innerHTML='<div class="ps-loading">Nuk ka personel aktiv</div>';return}
+
   const [gjRes,salesRes]=await Promise.all([
     sb.from('kassa_gjendja').select('*').eq('restaurant_id',RESTAURANT_ID).eq('data',dato),
     sb.from('ordrer').select('bruger_id,total').eq('restaurant_id',RESTAURANT_ID).eq('status','betalt').eq('betaling','kontant').gte('oprettet',_localIso(dato,'00:00:00')).lte('oprettet',_localIso(dato,'23:59:59'))
   ]);
   const gj={};(gjRes.data||[]).forEach(r=>{gj[r.bruger_id]=r});
   const sh={};(salesRes.data||[]).forEach(o=>{if(o.bruger_id) sh[o.bruger_id]=(sh[o.bruger_id]||0)+parseFloat(o.total||0)});
-  wrap.innerHTML=`<table class="kassa-tabel">
-    <thead><tr><th>Personi</th><th style="text-align:right">Fillimi €</th><th style="text-align:right">Shitje kesh</th><th style="text-align:right">Fundi €</th><th style="text-align:right">Diferenca</th></tr></thead>
-    <tbody>${aktive.map((b,i)=>{
-      const g=gj[b.id]||{};
-      const fillim=g.fillim!=null?parseFloat(g.fillim):null;
-      const fund=g.fund!=null?parseFloat(g.fund):null;
-      const shitje=sh[b.id]||0;
-      let diffHtml='<span class="kassa-diff nul">–</span>';
-      if(fillim!==null&&fund!==null){
-        const d=fund-(fillim+shitje);
-        const cls=Math.abs(d)<0.005?'nul':d>0?'plus':'minus';
-        diffHtml=`<span class="kassa-diff ${cls}">${d>=0?'+':''}${d.toFixed(2)} €</span>`;
-      }
-      // Fillimi: editable if not yet set; locked once saved
-      const fillimCel = fillim===null
-        ? `<input class="kassa-inp" type="number" step="0.01" min="0" placeholder="0.00" onblur="ruajKassa('${b.id}','fillim',this.value,'${dato}')">`
-        : `<span class="kassa-locked">${fillim.toFixed(2)} €</span><span class="kassa-lock-ikon" title="E bllokuar">🔒</span>`+
-          (erAdmin?`<button class="kassa-unlock-btn" title="Ndrysho (Admin)" onclick="hapeLlojaKasses('${b.id}',${fillim},'${dato}')">✏️</button>`:'');
+
+  const rows=gjRes.data||[];
+  const mbyllur=rows.some(r=>r.mbyllur);
+  _kassaMbyllur=mbyllur;
+  const mbyllurRow=rows.find(r=>r.mbyllur);
+  const mbyllurNe=mbyllurRow?.mbyllur_ne;
+  const mbyllurNga=mbyllurRow?.mbyllur_nga;
+
+  const mbyllBtn=document.getElementById('kassa-mbyll-btn');
+  if(mbyllBtn) mbyllBtn.style.display=(erAdmin&&!mbyllur)?'':'none';
+
+  const timeStr=mbyllurNe
+    ?new Date(mbyllurNe).toLocaleTimeString('sq',{hour:'2-digit',minute:'2-digit'}):'';
+  const banner=mbyllur
+    ?`<div class="kassa-mbyllur-banner">✅ Ditë e mbyllur · ${dato}${timeStr?' · '+timeStr:''}${mbyllurNga?' nga '+mbyllurNga:''}`
+      +(erAdmin?`<button class="kassa-rihap-btn" onclick="rihaditDiten('${dato}')">✏️ Rihap</button>`:'')
+      +`</div>`
+    :'';
+
+  const tableRows=aktive.map((b,i)=>{
+    const g=gj[b.id]||{};
+    const fillim=g.fillim!=null?parseFloat(g.fillim):null;
+    const fund=g.fund!=null?parseFloat(g.fund):null;
+    const shitje=mbyllur?(g.shitje_kesh!=null?parseFloat(g.shitje_kesh):0):(sh[b.id]||0);
+    let diffHtml='<span class="kassa-diff nul">–</span>';
+    if(fillim!==null&&fund!==null){
+      const d=fund-(fillim+shitje);
+      const cls=Math.abs(d)<0.005?'nul':d>0?'plus':'minus';
+      diffHtml=`<span class="kassa-diff ${cls}">${d>=0?'+':''}${d.toFixed(2)} €</span>`;
+    }
+    if(mbyllur){
       return `<tr>
         <td><span class="kassa-avatar-sm" style="background:${BRUGER_COLORS[i%BRUGER_COLORS.length]}">${b.navn.charAt(0)}</span>${b.navn}</td>
-        <td id="kassa-fillim-${b.id}" style="text-align:right">${fillimCel}</td>
+        <td style="text-align:right"><span class="kassa-locked">${fillim!==null?fillim.toFixed(2)+' €':'–'}</span></td>
         <td class="kassa-shitje" style="text-align:right">${euro(shitje)}</td>
-        <td style="text-align:right"><input class="kassa-inp" type="number" step="0.01" min="0" value="${fund!==null?fund.toFixed(2):''}" placeholder="0.00" onblur="ruajKassa('${b.id}','fund',this.value,'${dato}')"></td>
+        <td style="text-align:right"><span class="kassa-locked">${fund!==null?fund.toFixed(2)+' €':'–'}</span></td>
         <td style="text-align:right">${diffHtml}</td>
       </tr>`;
-    }).join('')}</tbody>
+    }
+    const fillimCel=fillim===null
+      ?`<input class="kassa-inp" type="number" step="0.01" min="0" placeholder="0.00" onblur="ruajKassa('${b.id}','fillim',this.value,'${dato}')">`
+      :`<span class="kassa-locked">${fillim.toFixed(2)} €</span><span class="kassa-lock-ikon" title="E bllokuar">🔒</span>`
+        +(erAdmin?`<button class="kassa-unlock-btn" title="Ndrysho (Admin)" onclick="hapeLlojaKasses('${b.id}',${fillim},'${dato}')">✏️</button>`:'');
+    return `<tr>
+      <td><span class="kassa-avatar-sm" style="background:${BRUGER_COLORS[i%BRUGER_COLORS.length]}">${b.navn.charAt(0)}</span>${b.navn}</td>
+      <td id="kassa-fillim-${b.id}" style="text-align:right">${fillimCel}</td>
+      <td class="kassa-shitje" style="text-align:right">${euro(shitje)}</td>
+      <td style="text-align:right"><input class="kassa-inp" type="number" step="0.01" min="0" value="${fund!==null?fund.toFixed(2):''}" placeholder="0.00" onblur="ruajKassa('${b.id}','fund',this.value,'${dato}')"></td>
+      <td style="text-align:right">${diffHtml}</td>
+    </tr>`;
+  }).join('');
+
+  wrap.innerHTML=banner+`<table class="kassa-tabel">
+    <thead><tr>
+      <th>Personi</th>
+      <th style="text-align:right">Fillimi €</th>
+      <th style="text-align:right">Shitje kesh</th>
+      <th style="text-align:right">Fundi €</th>
+      <th style="text-align:right">Diferenca</th>
+    </tr></thead>
+    <tbody>${tableRows}</tbody>
   </table>`;
 }
 
-function hapeLlojaKasses(brugerId, currentVal, dato){
+function hapeLlojaKasses(brugerId,currentVal,dato){
   if(!erAdmin){visToast('🔒 Vetëm Admin mund ta ndryshojë fillimin!','gabim');return}
+  if(_kassaMbyllur){visToast('🔒 Dita është mbyllur. Rihap para se të ndryshosh.','gabim');return}
   const cell=document.getElementById('kassa-fillim-'+brugerId);
   cell.innerHTML=`<input class="kassa-inp" type="number" step="0.01" min="0" value="${parseFloat(currentVal).toFixed(2)}" onblur="ruajKassa('${brugerId}','fillim',this.value,'${dato}')">`;
   cell.querySelector('input').focus();
@@ -1774,6 +1812,7 @@ function hapeLlojaKasses(brugerId, currentVal, dato){
 }
 
 async function ruajKassa(brugerId,field,valStr,dato){
+  if(_kassaMbyllur){visToast('🔒 Dita është mbyllur. Rihap para se të ndryshosh.','gabim');renderKassaKontroll();return}
   const val=parseFloat(valStr);
   if(isNaN(val)||val<0) return;
   await sb.from('kassa_gjendja').upsert(
@@ -1781,6 +1820,102 @@ async function ruajKassa(brugerId,field,valStr,dato){
     {onConflict:'restaurant_id,bruger_id,data'}
   );
   renderKassaKontroll();
+}
+
+async function mbyllDiten(){
+  if(!erAdmin){hapLoginModalNormal();visToast('🔒 Vetëm Admin!','gabim');return}
+  const dato=document.getElementById('kassa-dato').value||sotDita();
+  if(!confirm(`Mbyll ditën ${dato}?\n\nKjo do të bllokojë të dhënat e kasës për këtë ditë.\nMund të hapet sërish vetëm me veprim të qëllimshëm Admin.`)) return;
+
+  const [gjRes,salesRes]=await Promise.all([
+    sb.from('kassa_gjendja').select('*').eq('restaurant_id',RESTAURANT_ID).eq('data',dato),
+    sb.from('ordrer').select('bruger_id,total').eq('restaurant_id',RESTAURANT_ID).eq('status','betalt').eq('betaling','kontant').gte('oprettet',_localIso(dato,'00:00:00')).lte('oprettet',_localIso(dato,'23:59:59'))
+  ]);
+  const sh={};
+  (salesRes.data||[]).forEach(o=>{if(o.bruger_id) sh[o.bruger_id]=(sh[o.bruger_id]||0)+parseFloat(o.total||0)});
+  const existing={};
+  (gjRes.data||[]).forEach(r=>{existing[r.bruger_id]=r});
+
+  const tani=new Date().toISOString();
+  const mbyllurNga=aktivBruger?.navn||'Admin';
+  const upsertRows=brugere.filter(b=>b.aktiv).map(b=>{
+    const e=existing[b.id]||{};
+    return {restaurant_id:RESTAURANT_ID,bruger_id:b.id,data:dato,
+      fillim:e.fillim??null,fund:e.fund??null,
+      shitje_kesh:sh[b.id]||0,mbyllur:true,mbyllur_ne:tani,mbyllur_nga:mbyllurNga};
+  });
+  const {error}=await sb.from('kassa_gjendja').upsert(upsertRows,{onConflict:'restaurant_id,bruger_id,data'});
+  if(error){visToast('Gabim gjatë mbylljes','gabim');console.error(error);return}
+  visToast(`Dita ${dato} u mbyll ✓`);
+  renderKassaKontroll();
+  const histDet=document.getElementById('kassa-historia-details');
+  if(histDet?.open) ngarkoHistorikenKasses(histDet);
+}
+
+async function rihaditDiten(dato){
+  if(!erAdmin){hapLoginModalNormal();return}
+  if(!confirm(`Rihap ditën ${dato}?\n\nTë dhënat do të bëhen sërish të redaktueshme.`)) return;
+  const {error}=await sb.from('kassa_gjendja').update({mbyllur:false,mbyllur_ne:null})
+    .eq('restaurant_id',RESTAURANT_ID).eq('data',dato);
+  if(error){visToast('Gabim','gabim');return}
+  renderKassaKontroll();
+  visToast(`Dita ${dato} u rihap ✓`);
+}
+
+async function ngarkoHistorikenKasses(el){
+  if(!el.open) return;
+  const wrap=document.getElementById('kassa-historia-wrap');
+  if(!wrap) return;
+  wrap.innerHTML='<div class="ps-loading">Duke ngarkuar...</div>';
+  const {data,error}=await sb.from('kassa_gjendja').select('*')
+    .eq('restaurant_id',RESTAURANT_ID).eq('mbyllur',true).order('data',{ascending:false});
+  if(error||!data?.length){
+    wrap.innerHTML='<div class="ps-loading">Nuk ka ditë të mbyllura akoma</div>';return;
+  }
+  const byDate={};
+  data.forEach(r=>{if(!byDate[r.data]) byDate[r.data]=[];byDate[r.data].push(r)});
+  const dates=Object.keys(byDate).sort((a,b)=>b.localeCompare(a));
+  wrap.innerHTML=dates.map(dato=>{
+    const rows=byDate[dato];
+    const totFillim=rows.reduce((s,r)=>s+(parseFloat(r.fillim)||0),0);
+    const totShitje=rows.reduce((s,r)=>s+(parseFloat(r.shitje_kesh)||0),0);
+    const totFund=rows.reduce((s,r)=>s+(parseFloat(r.fund)||0),0);
+    const diff=totFund-(totFillim+totShitje);
+    const diffCls=Math.abs(diff)<0.005?'nul':diff>0?'plus':'minus';
+    const mne=rows[0]?.mbyllur_ne?new Date(rows[0].mbyllur_ne):null;
+    const mnga=rows[0]?.mbyllur_nga||'';
+    const closedStr=mne
+      ?mne.toLocaleDateString('sq',{day:'2-digit',month:'2-digit',year:'numeric'})
+        +' '+mne.toLocaleTimeString('sq',{hour:'2-digit',minute:'2-digit'})
+      :dato;
+    return `<details class="kh-dita">
+      <summary class="kh-summary">
+        <span class="kh-dato">${dato}</span>
+        <span class="kh-col"><span class="kh-lbl">Fillim</span>${euro(totFillim)}</span>
+        <span class="kh-col"><span class="kh-lbl">Shitje kesh</span>${euro(totShitje)}</span>
+        <span class="kh-col"><span class="kh-lbl">Fundi</span>${euro(totFund)}</span>
+        <span class="kassa-diff ${diffCls}">${diff>=0?'+':''}${diff.toFixed(2)} €</span>
+        <span class="kh-closed-by">🔒 ${closedStr}${mnga?' · '+mnga:''}</span>
+      </summary>
+      <div class="kh-personel">${rows.map((r,i)=>{
+        const b=brugere.find(x=>x.id===r.bruger_id);
+        const emri=b?.navn||'I panjohur';
+        const fill=parseFloat(r.fillim)||0;
+        const shitje=parseFloat(r.shitje_kesh)||0;
+        const fund=parseFloat(r.fund)||0;
+        const dif=fund-(fill+shitje);
+        const dc=Math.abs(dif)<0.005?'nul':dif>0?'plus':'minus';
+        return `<div class="kh-row">
+          <span class="kassa-avatar-sm" style="background:${BRUGER_COLORS[i%BRUGER_COLORS.length]}">${emri.charAt(0)}</span>
+          <span class="kh-emri">${emri}</span>
+          <span class="kh-v"><span class="kh-lbl">Fillim</span>${r.fillim!=null?euro(fill):'–'}</span>
+          <span class="kh-v"><span class="kh-lbl">Shitje</span>${euro(shitje)}</span>
+          <span class="kh-v"><span class="kh-lbl">Fundi</span>${r.fund!=null?euro(fund):'–'}</span>
+          <span class="kassa-diff ${dc}">${dif>=0?'+':''}${dif.toFixed(2)} €</span>
+        </div>`;
+      }).join('')}</div>
+    </details>`;
+  }).join('');
 }
 
 // =============================================

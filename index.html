@@ -129,10 +129,19 @@
         <span class="xh-boks-titull">💰 Kontrolli i Kasës</span>
         <div class="ps-filter">
           <input type="date" id="kassa-dato" onchange="renderKassaKontroll()">
+          <button class="kassa-mbyll-btn" id="kassa-mbyll-btn" onclick="mbyllDiten()" style="display:none">🔒 Mbyll ditën</button>
         </div>
       </div>
       <div id="kassa-tabel-wrap"><div class="ps-loading">Hap skedën Xhiro për të ngarkuar të dhënat</div></div>
     </div>
+
+    <!-- Cash control history (collapsible) -->
+    <details class="kassa-historia-boks xh-produkt-details" id="kassa-historia-details" ontoggle="ngarkoHistorikenKasses(this)">
+      <summary class="ps-summary">
+        <span>📅 Historia e kasës</span>
+      </summary>
+      <div id="kassa-historia-wrap"><div class="ps-loading">Duke ngarkuar...</div></div>
+    </details>
 
     <!-- Product breakdown (collapsible) -->
     <details class="produkt-shitje-boks xh-produkt-details" id="shitjet-produkt-details" ontoggle="ngarkoShitjetProdukt(this)">

@@ -1300,6 +1300,54 @@ body{
 }
 .kassa-unlock-btn:hover{background:var(--border);color:var(--tekst)}
 
+/* close-day button + locked banner */
+.kassa-mbyll-btn{
+  padding:6px 16px;background:var(--brun);color:#fff;
+  border:none;border-radius:8px;cursor:pointer;
+  font-size:.82rem;font-weight:700;font-family:inherit;white-space:nowrap;
+}
+.kassa-mbyll-btn:hover{opacity:.85}
+.kassa-mbyllur-banner{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  background:#D1FAE5;border:1.5px solid #6EE7B7;border-radius:10px;
+  padding:10px 16px;margin-bottom:14px;
+  font-size:.85rem;color:#065F46;font-weight:600;
+}
+.kassa-rihap-btn{
+  margin-left:auto;padding:4px 12px;background:none;
+  border:1.5px solid #059669;color:#065F46;
+  border-radius:7px;cursor:pointer;font-size:.77rem;
+  font-weight:600;font-family:inherit;transition:all .12s;
+}
+.kassa-rihap-btn:hover{background:#D1FAE5;border-color:#047857}
+
+/* kassa history collapsible */
+.kassa-historia-boks{
+  background:var(--white);border-radius:16px;box-shadow:var(--shadow);
+  margin-top:16px;overflow:hidden;
+}
+.kassa-historia-boks[open]>.ps-summary{border-bottom:1px solid var(--border)}
+.kh-dita{border-bottom:1px solid var(--border)}
+.kh-dita:last-child{border-bottom:none}
+.kh-summary{
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  padding:12px 24px;cursor:pointer;list-style:none;font-size:.83rem;user-select:none;
+}
+.kh-summary::-webkit-details-marker{display:none}
+.kh-summary:hover{background:var(--bg)}
+.kh-dato{font-weight:700;min-width:95px;color:var(--brun)}
+.kh-col{display:flex;flex-direction:column;align-items:flex-end;min-width:78px;font-weight:600}
+.kh-lbl{font-size:.67rem;color:var(--tekst-lys);font-weight:400;text-transform:uppercase;letter-spacing:.04em}
+.kh-closed-by{margin-left:auto;font-size:.72rem;color:var(--tekst-lys)}
+.kh-personel{padding:4px 24px 12px 44px;display:flex;flex-direction:column;gap:2px}
+.kh-row{
+  display:flex;align-items:center;gap:10px;
+  padding:7px 0;border-top:1px solid var(--border);font-size:.81rem;
+}
+.kh-row:first-child{border-top:none}
+.kh-emri{font-weight:600;min-width:80px}
+.kh-v{display:flex;flex-direction:column;align-items:flex-end;min-width:72px;font-weight:600}
+
 /* ─── PERSONELI ──────────────────────────────────── */
 .pers-raekke{
   display:flex;align-items:center;gap:14px;
