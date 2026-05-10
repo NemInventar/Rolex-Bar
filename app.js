@@ -4,6 +4,7 @@
 let kategorier = [], produkter = [], ordrer = [], tavolina = [];
 let erAdmin = false;
 let aktivBruger = null; // {id, navn, rolle} — current session user
+let _xhiroRel = []; // cached paid orders for current Xhiro period
 let pinInput = '';
 let pinMod = 'login'; // 'login' | 'pin-ri' | 'pin-konfirmo'
 let pinRiTemp = '';
@@ -1457,15 +1458,16 @@ async function opdaterOmsaetning(){
   const {data:rows,error}=await sb.from('ordrer').select('*,ordre_linjer(*)').eq('restaurant_id',RESTAURANT_ID).eq('status','betalt').gte('oprettet',fraStr).lte('oprettet',tilStr);
   if(error){console.error('opdaterOmsaetning',error);document.getElementById('kpi-grid').innerHTML=`<div style="color:var(--roed);padding:12px;grid-column:1/-1">⚠️ Gabim: ${error.message}</div>`;return}
   const rel=(rows||[]).map(o=>({...o,items:(o.ordre_linjer||[]).map(l=>({produkt_navn:l.navn,antal:l.antal,produkt_pris:l.pris}))}));
+  _xhiroRel=rel;
   // Staff cards — derived from same fetch, no extra query
   const stafiAgg={};
-  rel.forEach(o=>{const key=o.bruger_id||'_anon';const navn=o.bruger_navn||'Pa caktuar';if(!stafiAgg[key])stafiAgg[key]={navn,porosi:0,xhiro:0};stafiAgg[key].porosi++;stafiAgg[key].xhiro+=parseFloat(o.total)||0});
+  rel.forEach(o=>{const key=o.bruger_id||'_anon';const navn=o.bruger_navn||'Pa caktuar';if(!stafiAgg[key])stafiAgg[key]={key,navn,porosi:0,xhiro:0};stafiAgg[key].porosi++;stafiAgg[key].xhiro+=parseFloat(o.total)||0});
   const stafiRadhit=Object.values(stafiAgg).sort((a,b)=>b.xhiro-a.xhiro);
   const stafiTot=stafiRadhit.reduce((s,r)=>s+r.xhiro,0);
   const stafiEl=document.getElementById('xh-stafi-kortet');
   if(stafiEl){
     document.getElementById('xh-stafi-periodo').textContent=titull.replace(/^Xhiro\s+\S+\s+—\s+/,'');
-    stafiEl.innerHTML=!stafiRadhit.length?'<div class="ps-loading">Nuk ka të dhëna</div>':stafiRadhit.map((r,i)=>{const pct=stafiTot>0?Math.round(r.xhiro/stafiTot*100):0;const clr=BRUGER_COLORS[i%BRUGER_COLORS.length];const init=r.navn.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();return `<div class="xh-stafi-kort"><div class="xh-stafi-avatar" style="background:${clr}">${init}</div><div class="xh-stafi-emri">${r.navn}</div><div class="xh-stafi-xhiro">${euro(r.xhiro)}</div><div class="xh-stafi-meta">${r.porosi} porosi · ${pct}%</div><div class="xh-stafi-bar-wrap"><div class="xh-stafi-bar-fill" style="width:${pct}%;background:${clr}"></div></div></div>`}).join('');
+    stafiEl.innerHTML=!stafiRadhit.length?'<div class="ps-loading">Nuk ka të dhëna</div>':stafiRadhit.map((r,i)=>{const pct=stafiTot>0?Math.round(r.xhiro/stafiTot*100):0;const clr=BRUGER_COLORS[i%BRUGER_COLORS.length];const init=r.navn.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();return `<div class="xh-stafi-kort" style="cursor:pointer" onclick="hapStafiOrdret('${r.key}',${i})"><div class="xh-stafi-avatar" style="background:${clr}">${init}</div><div class="xh-stafi-emri">${r.navn}</div><div class="xh-stafi-xhiro">${euro(r.xhiro)}</div><div class="xh-stafi-meta">${r.porosi} porosi · ${pct}%</div><div class="xh-stafi-bar-wrap"><div class="xh-stafi-bar-fill" style="width:${pct}%;background:${clr}"></div></div></div>`}).join('');
   }
   if(aktivPeriode==='dag'){
     const t={};for(let h=7;h<=22;h++)t[h]=0;
@@ -1504,6 +1506,39 @@ async function opdaterOmsaetning(){
   const top5=Object.entries(pt).sort((a,b)=>b[1]-a[1]).slice(0,5);
   document.getElementById('top5-tabel').innerHTML=`<h3>Top 5 produktet</h3>${top5.map((p,i)=>`<div class="mt-raekke"><span>${i+1}. ${p[0]}</span><span>${p[1]} cop.</span></div>`).join('')||'<div style="color:var(--tekst-lys);font-size:.83rem;padding:8px 0">Nuk ka të dhëna</div>'}`;
   document.getElementById('betaling-tabel').innerHTML=`<h3>Ndarja e pagesave</h3><div class="mt-raekke"><span>💵 Kesh</span><span>${euro(kesh)}</span></div><div class="mt-raekke"><span>💳 Kartë/Mobil</span><span>${euro(karte)}</span></div><div class="mt-raekke" style="font-weight:700"><span>Totali</span><span>${euro(xhiro)}</span></div>`;
+}
+
+function hapStafiOrdret(key, colorIdx){
+  const clr=BRUGER_COLORS[colorIdx%BRUGER_COLORS.length];
+  const ordret=key==='_anon'
+    ?_xhiroRel.filter(o=>!o.bruger_id)
+    :_xhiroRel.filter(o=>o.bruger_id===key);
+  ordret.sort((a,b)=>new Date(b.oprettet)-new Date(a.oprettet));
+  const navn=ordret[0]?.bruger_navn||'Pa caktuar';
+  const init=navn.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  const totXhiro=ordret.reduce((s,o)=>s+o.total,0);
+  document.getElementById('so-header').innerHTML=`
+    <div style="display:flex;align-items:center;gap:14px">
+      <div style="width:48px;height:48px;border-radius:50%;background:${clr};display:flex;align-items:center;justify-content:center;font-size:1.2rem;font-weight:800;color:#fff;flex-shrink:0">${init}</div>
+      <div>
+        <div style="font-size:1.05rem;font-weight:800;color:var(--tekst)">${navn}</div>
+        <div style="font-size:.8rem;color:var(--tekst-lys);margin-top:3px">${ordret.length} porosi · ${euro(totXhiro)}</div>
+      </div>
+    </div>`;
+  document.getElementById('so-liste').innerHTML=!ordret.length
+    ?'<div class="ps-loading" style="padding:24px 0">Nuk ka porosi</div>'
+    :ordret.map(o=>{
+        const koha=new Date(o.oprettet).toLocaleTimeString('sq-AL',{hour:'2-digit',minute:'2-digit'});
+        const data=new Date(o.oprettet).toLocaleDateString('sq-AL',{day:'2-digit',month:'2-digit'});
+        const items=(o.items||[]).map(i=>i.antal+'× '+i.produkt_navn).join(', ');
+        const bet=o.betaling==='kontant'?'💵 Kesh':o.betaling==='kort'?'💳 Kartë':'💳';
+        return `<div class="so-raekke">
+          <div class="so-meta">#${o.ordre_nummer}${o.bord&&o.bord!=='–'?` · Tab ${o.bord}`:''} · ${data} ${koha}</div>
+          <div class="so-items">${items||'–'}</div>
+          <div class="so-total">${bet} · ${euro(o.total)}</div>
+        </div>`;
+      }).join('');
+  document.getElementById('stafi-ordret-modal').classList.add('vis');
 }
 
 // ─── PRODUKT-SHITJE ───────────────────────────────

@@ -1317,6 +1317,13 @@ body{
   border:1px solid var(--border);
 }
 
+/* ─── STAFI ORDRET MODAL ─────────────────────────── */
+.so-raekke{padding:11px 0;border-bottom:1px solid var(--border)}
+.so-raekke:last-child{border-bottom:none}
+.so-meta{font-size:.74rem;color:var(--tekst-lys);font-weight:600;margin-bottom:3px}
+.so-items{font-size:.83rem;color:var(--tekst);line-height:1.4}
+.so-total{font-size:.88rem;font-weight:700;color:var(--guld);margin-top:4px}
+
 /* ─── BRUGER PICKER ──────────────────────────────── */
 .bp-brugere-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
 .bp-bruger-btn{
