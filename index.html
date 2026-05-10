@@ -158,7 +158,10 @@
   <div class="side" id="historik-side">
     <div class="side-header">
       <h2>📋 Historiku i porosive</h2>
-      <button class="eksport-btn" onclick="fshiHistorikun()" style="background:var(--roed)">🗑 Fshi historikun</button>
+      <div style="display:flex;gap:8px">
+        <button class="eksport-btn" id="hist-arkiv-toggle" onclick="toggleArkivMod(this)">📦 Arkivi</button>
+        <button class="eksport-btn" id="hist-arkivo-listen-btn" onclick="arkivoListen()" style="background:var(--brun)">📦 Arkivo listën</button>
+      </div>
     </div>
     <div class="filter-bar">
       <input type="date" id="hist-fra" onchange="opdaterHistorik()">

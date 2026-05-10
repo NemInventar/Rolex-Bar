@@ -5,6 +5,7 @@ let kategorier = [], produkter = [], ordrer = [], tavolina = [];
 let erAdmin = false;
 let aktivBruger = null; // {id, navn, rolle} — current session user
 let _xhiroRel = []; // cached paid orders for current Xhiro period
+let _histArkivMod = false;
 let pinInput = '';
 let pinMod = 'login'; // 'login' | 'pin-ri' | 'pin-konfirmo'
 let pinRiTemp = '';
@@ -220,13 +221,37 @@ function logoutStaff(){
   visToast('Dolët nga sistemi');
 }
 
-function fshiHistorikun(){
-  if(!erAdmin){ hapLoginModalNormal(); visToast('Keni nevojë për login Admin!','gabim'); return; }
-  if(!confirm('Fshi të gjithë historikun e porosive të paguara?')) return;
-  ordrer=ordrer.filter(o=>o.status==='aaben'||o.status==='ventende');
-  gemData();
+function toggleArkivMod(el){
+  _histArkivMod=!_histArkivMod;
+  el.textContent=_histArkivMod?'📋 Historiku':'📦 Arkivi';
+  el.classList.toggle('arkiv-aktiv',_histArkivMod);
+  const btn=document.getElementById('hist-arkivo-listen-btn');
+  if(btn) btn.style.display=_histArkivMod?'none':'';
   opdaterHistorik();
-  visToast('Historiku u fshi ✓');
+}
+
+async function arkivoOrdren(id){
+  if(!erAdmin){hapLoginModalNormal();visToast('🔒 Keni nevojë për login Admin!','gabim');return}
+  await sb.from('ordrer').update({status:'arkiveret'}).eq('id',id);
+  opdaterHistorik();
+  visToast('Porosi u arkivua ✓');
+}
+
+async function arkivoListen(){
+  if(!erAdmin){hapLoginModalNormal();visToast('🔒 Keni nevojë për login Admin!','gabim');return}
+  const fra=document.getElementById('hist-fra').value,til=document.getElementById('hist-til').value;
+  const bet=document.getElementById('hist-betaling').value,stat=document.getElementById('hist-status').value;
+  const msg=fra||til?`Arkivo të gjitha porositë${fra?' nga '+fra:''}${til?' deri '+til:''}?`:'Arkivo të gjitha porositë e shfaqura?';
+  if(!confirm(msg)) return;
+  let q=sb.from('ordrer').update({status:'arkiveret'}).eq('restaurant_id',RESTAURANT_ID).in('status',['betalt','afvist']);
+  if(fra) q=q.gte('oprettet',_localIso(fra,'00:00:00'));
+  if(til) q=q.lte('oprettet',_localIso(til,'23:59:59'));
+  if(bet) q=q.eq('betaling',bet);
+  if(stat) q=q.eq('status',stat);
+  const {error}=await q;
+  if(error){visToast('Gabim gjatë arkivimit','gabim');return}
+  opdaterHistorik();
+  visToast('Lista u arkivua ✓');
 }
 
 function fshiNjeOrdre(id){
@@ -1767,16 +1792,17 @@ async function opdaterHistorik(){
   const liste=document.getElementById('historik-liste');
   liste.innerHTML='<div class="ingen-data" style="padding:30px">Duke ngarkuar...</div>';
 
+  const statusFilter=_histArkivMod?['arkiveret']:['betalt','afvist'];
   let q=sb.from('ordrer')
     .select('*, ordre_linjer(*)')
     .eq('restaurant_id',RESTAURANT_ID)
-    .in('status',['betalt','afvist'])
+    .in('status',statusFilter)
     .order('oprettet',{ascending:false})
     .limit(200);
   if(fra) q=q.gte('oprettet',_localIso(fra,'00:00:00'));
   if(til) q=q.lte('oprettet',_localIso(til,'23:59:59'));
   if(bet) q=q.eq('betaling',bet);
-  if(stat) q=q.eq('status',stat);
+  if(stat&&!_histArkivMod) q=q.eq('status',stat);
 
   const {data,error}=await q;
   if(error){liste.innerHTML='<div class="ingen-data" style="padding:30px">Gabim gjatë ngarkimit</div>';return}
@@ -1788,25 +1814,21 @@ async function opdaterHistorik(){
   }));
 
   if(!vis.length){liste.innerHTML='<div class="ingen-data" style="padding:30px">Nuk ka porosi me këto filtra</div>';return}
-  liste.innerHTML=vis.map(o=>`<div class="ht-raekke" onclick='hapFature(${JSON.stringify(o)})'>
+  liste.innerHTML=vis.map(o=>{
+    const sc=o.status==='betalt'?'paguar':o.status==='afvist'?'refuzuar':'arkivuar';
+    const sl=o.status==='betalt'?'Paguar':o.status==='afvist'?'Refuzuar':'Arkivuar';
+    return `<div class="ht-raekke" onclick='hapFature(${JSON.stringify(o)})'>
     <div>#${o.ordre_nummer}</div>
     <div>${formatData(o.oprettet)}</div>
     <div>${euro(o.total)}</div>
     <div>${o.betaling==='kontant'?'Kesh':o.betaling==='kort'?'Kartë':o.betaling||'–'}</div>
-    <div><span class="ht-status ${o.status==='betalt'?'paguar':'refuzuar'}">${o.status==='betalt'?'Paguar':'Refuzuar'}</span></div>
+    <div><span class="ht-status ${sc}">${sl}</span></div>
     <div style="display:flex;gap:3px;align-items:center">
       <button class="ht-print-btn" onclick="event.stopPropagation();hapFature(${JSON.stringify(o).replace(/'/g,'&#39;')})">🖨 Printo</button>
-      ${erAdmin?`<button class="ht-fshi-btn" onclick="event.stopPropagation();fshiNjeOrdreHistorik('${o.id}')">🗑</button>`:''}
+      ${erAdmin&&!_histArkivMod?`<button class="ht-arkivo-btn" onclick="event.stopPropagation();arkivoOrdren('${o.id}')">📦</button>`:''}
     </div>
-  </div>`).join('');
-}
-
-async function fshiNjeOrdreHistorik(id){
-  if(!erAdmin){hapLoginModalNormal();visToast('🔒 Keni nevojë për login Admin!','gabim');return}
-  if(!confirm('Fshi këtë porosi nga historiku?')) return;
-  await sb.from('ordrer').delete().eq('id',id);
-  opdaterHistorik();
-  visToast('Porosi u fshi ✓');
+  </div>`;
+  }).join('');
 }
 
 // =============================================

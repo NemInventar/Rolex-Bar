@@ -905,6 +905,15 @@ body{
   margin-left:4px;font-family:inherit;transition:all .12s;
 }
 .ht-fshi-btn:hover{background:var(--roed);color:#fff}
+.ht-arkivo-btn{
+  padding:3px 8px;background:none;
+  border:1.5px solid #D97706;color:#92400E;
+  border-radius:6px;cursor:pointer;font-size:.7rem;font-weight:600;
+  margin-left:4px;font-family:inherit;transition:all .12s;
+}
+.ht-arkivo-btn:hover{background:#D97706;color:#fff}
+.ht-status.arkivuar{background:#FEF3C7;color:#92400E}
+.eksport-btn.arkiv-aktiv{background:var(--brun)!important;color:#fff!important}
 
 /* ─── PRODUKTET ──────────────────────────────────── */
 #produkter-side{flex-direction:column;padding:20px;gap:16px;overflow-y:auto}
