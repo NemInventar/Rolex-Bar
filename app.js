@@ -148,7 +148,6 @@ let posPikZone = null;
 let aktivPeriode = 'dag', periodeChart = null;
 let keshAmount = '', keshOrdreId = null, keshGjithaBord = null;
 let celebrationOrdreId = null;
-let undoOrdreId = null, undoTimer = null, undoSekundat = 0;
 
 // =============================================
 // SUPABASE
@@ -684,11 +683,7 @@ function ktheOrdrenNgaCelebration(){
   ktheOrdren(celebrationOrdreId);
   mbyllCelebration();
 }
-function ktheOrdrenNgaBanner(){
-  if(!undoOrdreId) return;
-  ktheOrdren(undoOrdreId);
-  fshiUndoBanner();
-}
+
 function ktheOrdren(id){
   const o=ordrer.find(x=>x.id===id);
   if(!o) return;
@@ -701,27 +696,7 @@ function ktheOrdren(id){
   visToast(`Porosi #${o.ordre_nummer} u kthye në tavolina aktive`,'info');
 }
 
-// UNDO BANNER (nëse mbyllet celebration para se ta shihin kusur)
-function visUndoBanner(ordreId){
-  undoOrdreId=ordreId;
-  undoSekundat=15;
-  const banner=document.getElementById('undo-banner');
-  const o=ordrer.find(x=>x.id===ordreId);
-  document.getElementById('undo-tekst').textContent=`✓ Tavolina ${o.bord} u pagua`;
-  document.getElementById('undo-timer').textContent=`(${undoSekundat}s)`;
-  banner.classList.add('vis');
-  if(undoTimer) clearInterval(undoTimer);
-  undoTimer=setInterval(()=>{
-    undoSekundat--;
-    document.getElementById('undo-timer').textContent=`(${undoSekundat}s)`;
-    if(undoSekundat<=0) fshiUndoBanner();
-  },1000);
-}
-function fshiUndoBanner(){
-  if(undoTimer){clearInterval(undoTimer);undoTimer=null}
-  document.getElementById('undo-banner').classList.remove('vis');
-  undoOrdreId=null;
-}
+
 
 // =============================================
 // KESH LLOGARITËS
