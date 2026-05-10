@@ -77,9 +77,8 @@ function konfirmoPin(){
       erAdmin=true;
       aktivBruger={id:'_admin',navn:'Admin',rolle:'admin'};
       mbyllModal('login-modal');
-      document.getElementById('admin-btn').textContent='🔓 Admin';
-      document.getElementById('admin-btn').classList.add('aktiv');
       visToast('Mirë se vini, Admin! 🔓');
+      updateBrugerBadge();
       pinInput='';
     } else {
       tregoPinGabim('❌ Kod i gabuar! Provoni sërish - ma ha karrin.');
@@ -116,9 +115,8 @@ function konfirmoPin(){
 function logoutAdmin(){
   erAdmin=false;
   aktivBruger=null;
-  document.getElementById('admin-btn').textContent='🔒 Hyr';
-  document.getElementById('admin-btn').classList.remove('aktiv');
   if(document.getElementById('produkter-side').classList.contains('aktiv')) skiftTab('pos');
+  updateBrugerBadge();
   visToast('Dolët nga sistemi');
 }
 
@@ -196,9 +194,7 @@ async function bpKonfirmoPin(){
     aktivBruger={id:b.id,navn:b.navn,rolle:b.rolle};
     erAdmin=(b.rolle==='admin');
     mbyllModal('bruger-picker-modal');
-    const btn=document.getElementById('admin-btn');
-    if(erAdmin){btn.textContent='🔓 Admin';btn.classList.add('aktiv')}
-    else{btn.textContent=`👤 ${b.navn}`;btn.classList.add('aktiv')}
+    updateBrugerBadge();
     visToast(`Mirë se vini, ${b.navn}! ✓`);
     bpPinInput='';bpZgjedhurBrugerId=null;
   } else {
@@ -215,11 +211,34 @@ function bpVisLista(){
 }
 function logoutStaff(){
   aktivBruger=null;erAdmin=false;
-  const btn=document.getElementById('admin-btn');
-  btn.textContent='🔒 Hyr';btn.classList.remove('aktiv');
   mbyllModal('bruger-picker-modal');
   if(document.getElementById('produkter-side').classList.contains('aktiv')) skiftTab('pos');
+  updateBrugerBadge();
   visToast('Dolët nga sistemi');
+}
+
+function updateBrugerBadge(){
+  const badge=document.getElementById('bruger-badge');
+  const btn=document.getElementById('admin-btn');
+  if(!badge) return;
+  if(aktivBruger){
+    const idx=brugere.findIndex(b=>b.id===aktivBruger.id);
+    const color=idx>=0?BRUGER_COLORS[idx%BRUGER_COLORS.length]:'#5C3317';
+    document.getElementById('bb-avatar').style.background=color;
+    document.getElementById('bb-avatar').textContent=aktivBruger.navn.charAt(0).toUpperCase();
+    document.getElementById('bb-navn').textContent=aktivBruger.navn;
+    document.getElementById('bb-rol').textContent=erAdmin?'Admin':'Personel';
+    badge.style.display='flex';
+    if(btn) btn.style.display='none';
+  } else {
+    badge.style.display='none';
+    if(btn){btn.style.display='';btn.textContent='🔒 Hyr';btn.classList.remove('aktiv')}
+  }
+}
+
+function logoutBruger(){
+  if(erAdmin) logoutAdmin();
+  else logoutStaff();
 }
 
 function toggleArkivMod(el){

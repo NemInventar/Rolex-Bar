@@ -18,8 +18,16 @@
 
 <div id="header">
   <h1>Artizano <span>POS</span></h1>
-  <div style="display:flex;align-items:center;gap:14px">
+  <div style="display:flex;align-items:center;gap:12px">
     <div id="clock"></div>
+    <div id="bruger-badge">
+      <span id="bb-avatar"></span>
+      <div id="bb-info">
+        <span id="bb-navn"></span>
+        <span id="bb-rol"></span>
+      </div>
+      <button id="bb-dil" onclick="logoutBruger()">×</button>
+    </div>
     <button id="admin-btn" onclick="toggleAdmin()">🔒 Hyr</button>
   </div>
 </div>
