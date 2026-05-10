@@ -374,7 +374,6 @@ function skiftTab(tab) {
     const det=document.getElementById('shitjet-produkt-details');
     if(det) det.removeAttribute('open');
     opdaterOmsaetning();
-    opdaterShitjetPersonel();
     renderKassaKontroll();
   }
   if(tab==='historik') opdaterHistorik();
@@ -1356,6 +1355,16 @@ async function opdaterOmsaetning(){
   const {data:rows,error}=await sb.from('ordrer').select('*,ordre_linjer(*)').eq('restaurant_id',RESTAURANT_ID).eq('status','betalt').gte('oprettet',fraStr).lte('oprettet',tilStr);
   if(error){console.error('opdaterOmsaetning',error);document.getElementById('kpi-grid').innerHTML=`<div style="color:var(--roed);padding:12px;grid-column:1/-1">⚠️ Gabim: ${error.message}</div>`;return}
   const rel=(rows||[]).map(o=>({...o,items:(o.ordre_linjer||[]).map(l=>({produkt_navn:l.navn,antal:l.antal,produkt_pris:l.pris}))}));
+  // Staff cards — derived from same fetch, no extra query
+  const stafiAgg={};
+  rel.forEach(o=>{const key=o.bruger_id||'_anon';const navn=o.bruger_navn||'Pa caktuar';if(!stafiAgg[key])stafiAgg[key]={navn,porosi:0,xhiro:0};stafiAgg[key].porosi++;stafiAgg[key].xhiro+=parseFloat(o.total)||0});
+  const stafiRadhit=Object.values(stafiAgg).sort((a,b)=>b.xhiro-a.xhiro);
+  const stafiTot=stafiRadhit.reduce((s,r)=>s+r.xhiro,0);
+  const stafiEl=document.getElementById('xh-stafi-kortet');
+  if(stafiEl){
+    document.getElementById('xh-stafi-periodo').textContent=titull.replace(/^Xhiro\s+\S+\s+—\s+/,'');
+    stafiEl.innerHTML=!stafiRadhit.length?'<div class="ps-loading">Nuk ka të dhëna</div>':stafiRadhit.map((r,i)=>{const pct=stafiTot>0?Math.round(r.xhiro/stafiTot*100):0;const clr=BRUGER_COLORS[i%BRUGER_COLORS.length];const init=r.navn.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();return `<div class="xh-stafi-kort"><div class="xh-stafi-avatar" style="background:${clr}">${init}</div><div class="xh-stafi-emri">${r.navn}</div><div class="xh-stafi-xhiro">${euro(r.xhiro)}</div><div class="xh-stafi-meta">${r.porosi} porosi · ${pct}%</div><div class="xh-stafi-bar-wrap"><div class="xh-stafi-bar-fill" style="width:${pct}%;background:${clr}"></div></div></div>`}).join('');
+  }
   if(aktivPeriode==='dag'){
     const t={};for(let h=7;h<=22;h++)t[h]=0;
     rel.forEach(o=>{const h=new Date(o.oprettet).getHours();if(t[h]!==undefined)t[h]+=o.total});
@@ -1374,18 +1383,24 @@ async function opdaterOmsaetning(){
   const tvsh=rel.reduce((s,o)=>s+(o.moms||0),0);
   const pt={};rel.forEach(o=>o.items.forEach(i=>{pt[i.produkt_navn]=(pt[i.produkt_navn]||0)+i.antal}));
   const top=Object.entries(pt).sort((a,b)=>b[1]-a[1])[0];
+  const kesh=rel.filter(o=>o.betaling==='kontant').reduce((s,o)=>s+o.total,0);
+  const karte=rel.filter(o=>o.betaling==='kort'||o.betaling==='mobil').reduce((s,o)=>s+o.total,0);
   document.getElementById('kpi-grid').innerHTML=`
-    <div class="kpi-kort"><div class="kpi-label">Xhiro totale</div><div class="kpi-vaerdi">${Math.round(xhiro).toLocaleString()} €</div><div class="kpi-sub">me TVSH</div></div>
-    <div class="kpi-kort"><div class="kpi-label">Nr. transaksioneve</div><div class="kpi-vaerdi">${nt}</div></div>
-    <div class="kpi-kort"><div class="kpi-label">Vlera mesatare</div><div class="kpi-vaerdi">${Math.round(snit)} €</div></div>
-    <div class="kpi-kort"><div class="kpi-label">Produkti kryesor</div><div class="kpi-vaerdi" style="font-size:1rem">${top?top[0]:'–'}</div><div class="kpi-sub">${top?top[1]+' cop.':''}</div></div>
-    <div class="kpi-kort"><div class="kpi-label">TVSH</div><div class="kpi-vaerdi">${Math.round(tvsh).toLocaleString()} €</div></div>`;
+    <div class="xh-total-kort">
+      <div class="xh-total-label">${titull}</div>
+      <div class="xh-total-vaerdi"><span>€</span>${xhiro.toFixed(2).replace('.',',')}</div>
+      <div class="xh-total-stats"><span><strong>${nt}</strong> transaksione</span><span style="opacity:.4">·</span><span>mesatare <strong>${euro(snit)}</strong></span></div>
+    </div>
+    <div class="xh-kpi-row">
+      <div class="xh-kpi-mini"><span class="xh-kpi-mini-ikon">🏆</span><span class="xh-kpi-mini-val">${top?top[0]:'–'}</span><span class="xh-kpi-mini-lbl">Produkti kryesor</span></div>
+      <div class="xh-kpi-mini"><span class="xh-kpi-mini-ikon">🧾</span><span class="xh-kpi-mini-val">${Math.round(tvsh)} €</span><span class="xh-kpi-mini-lbl">TVSH 18%</span></div>
+      <div class="xh-kpi-mini"><span class="xh-kpi-mini-ikon">💵</span><span class="xh-kpi-mini-val">${euro(kesh)}</span><span class="xh-kpi-mini-lbl">Kesh</span></div>
+      <div class="xh-kpi-mini"><span class="xh-kpi-mini-ikon">💳</span><span class="xh-kpi-mini-val">${euro(karte)}</span><span class="xh-kpi-mini-lbl">Kartë/Mobil</span></div>
+    </div>`;
   if(periodeChart) periodeChart.destroy();
   periodeChart=new Chart(document.getElementById('hoved-chart').getContext('2d'),{type:'bar',data:{labels,datasets:[{label:'€',data,backgroundColor:'rgba(201,150,59,.7)',borderColor:'#C9963B',borderWidth:2,borderRadius:6}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>euro(c.raw)}}},scales:{y:{beginAtZero:true,ticks:{callback:v=>Math.round(v)+' €'}}}}});
   const top5=Object.entries(pt).sort((a,b)=>b[1]-a[1]).slice(0,5);
   document.getElementById('top5-tabel').innerHTML=`<h3>Top 5 produktet</h3>${top5.map((p,i)=>`<div class="mt-raekke"><span>${i+1}. ${p[0]}</span><span>${p[1]} cop.</span></div>`).join('')||'<div style="color:var(--tekst-lys);font-size:.83rem;padding:8px 0">Nuk ka të dhëna</div>'}`;
-  const kesh=rel.filter(o=>o.betaling==='kontant').reduce((s,o)=>s+o.total,0);
-  const karte=rel.filter(o=>o.betaling==='kort'||o.betaling==='mobil').reduce((s,o)=>s+o.total,0);
   document.getElementById('betaling-tabel').innerHTML=`<h3>Ndarja e pagesave</h3><div class="mt-raekke"><span>💵 Kesh</span><span>${euro(kesh)}</span></div><div class="mt-raekke"><span>💳 Kartë/Mobil</span><span>${euro(karte)}</span></div><div class="mt-raekke" style="font-weight:700"><span>Totali</span><span>${euro(xhiro)}</span></div>`;
 }
 
@@ -1417,7 +1432,6 @@ async function opdaterShitjetProdukt(){
   }));
   _shitjetData=Object.values(agg);
   renderShitjet();
-  opdaterShitjetPersonel();
 }
 function renderShitjet(){
   const liste=document.getElementById('produkt-shitje-liste');

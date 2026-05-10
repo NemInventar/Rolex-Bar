@@ -82,23 +82,60 @@
 
   <!-- XHIRO -->
   <div class="side" id="omsaetning-side">
-    <div class="side-header">
-      <h2>📊 Xhiro</h2>
-      <button class="eksport-btn" onclick="eksporterCSV()">⬇ Eksporto CSV</button>
+
+    <!-- Sticky controls bar -->
+    <div class="xh-topbar">
+      <h2 class="xh-topbar-titull">📊 Xhiro</h2>
+      <div class="xh-topbar-right">
+        <div class="periode-bar">
+          <button class="periode-btn aktiv" onclick="skiftPeriode('dag',this)">Ditë</button>
+          <button class="periode-btn" onclick="skiftPeriode('uge',this)">Javë</button>
+          <button class="periode-btn" onclick="skiftPeriode('maaned',this)">Muaj</button>
+          <input type="date" class="dato-felt" id="periode-dato" onchange="opdaterOmsaetning()">
+        </div>
+        <button class="eksport-btn" onclick="eksporterCSV()">⬇ CSV</button>
+      </div>
     </div>
-    <div class="periode-bar">
-      <button class="periode-btn aktiv" onclick="skiftPeriode('dag',this)">Ditë</button>
-      <button class="periode-btn" onclick="skiftPeriode('uge',this)">Javë</button>
-      <button class="periode-btn" onclick="skiftPeriode('maaned',this)">Muaj</button>
-      <input type="date" class="dato-felt" id="periode-dato" onchange="opdaterOmsaetning()">
+
+    <!-- Staff revenue — prominent -->
+    <div class="xh-boks xh-stafi-boks">
+      <div class="xh-boks-header">
+        <span class="xh-boks-titull">👥 Stafi</span>
+        <span class="xh-boks-sub" id="xh-stafi-periodo"></span>
+      </div>
+      <div class="xh-stafi-grid" id="xh-stafi-kortet">
+        <div class="ps-loading">Duke ngarkuar...</div>
+      </div>
     </div>
-    <div class="kpi-grid" id="kpi-grid"></div>
-    <div class="chart-boks"><h3 id="chart-titel">Xhiro orë pas ore</h3><canvas id="hoved-chart"></canvas></div>
-    <div class="stats-grid">
+
+    <!-- Total KPI hero + 4 mini KPIs -->
+    <div id="kpi-grid"></div>
+
+    <!-- Chart -->
+    <div class="chart-boks xh-chart">
+      <h3 id="chart-titel">Xhiro orë pas ore</h3>
+      <canvas id="hoved-chart"></canvas>
+    </div>
+
+    <!-- Top 5 + payment split -->
+    <div class="stats-grid xh-stats">
       <div class="mini-tabel" id="top5-tabel"></div>
       <div class="mini-tabel" id="betaling-tabel"></div>
     </div>
-    <details class="produkt-shitje-boks" id="shitjet-produkt-details" ontoggle="ngarkoShitjetProdukt(this)">
+
+    <!-- Cash drawer reconciliation -->
+    <div class="xh-boks kassa-boks">
+      <div class="xh-boks-header">
+        <span class="xh-boks-titull">💰 Kontrolli i Kasës</span>
+        <div class="ps-filter">
+          <input type="date" id="kassa-dato" onchange="renderKassaKontroll()">
+        </div>
+      </div>
+      <div id="kassa-tabel-wrap"><div class="ps-loading">Hap skedën Xhiro për të ngarkuar të dhënat</div></div>
+    </div>
+
+    <!-- Product breakdown (collapsible) -->
+    <details class="produkt-shitje-boks xh-produkt-details" id="shitjet-produkt-details" ontoggle="ngarkoShitjetProdukt(this)">
       <summary class="ps-summary">
         <span>📦 Shitjet sipas produktit</span>
         <div class="ps-filter" onclick="event.stopPropagation()">
@@ -114,23 +151,7 @@
       </div>
       <div id="produkt-shitje-liste"></div>
     </details>
-    <div class="produkt-shitje-boks" style="margin-top:16px">
-      <div class="ps-header">
-        <h3>👥 Shitjet sipas personelit</h3>
-      </div>
-      <div id="personel-shitje-liste"><div class="ps-loading">Zgjidhni datën për të parë të dhënat</div></div>
-    </div>
 
-    <!-- KASSA KONTROLL -->
-    <div class="kassa-boks">
-      <div class="ps-header">
-        <h3>💰 Kontrolli i Kasës</h3>
-        <div class="ps-filter">
-          <input type="date" id="kassa-dato" onchange="renderKassaKontroll()">
-        </div>
-      </div>
-      <div id="kassa-tabel-wrap"><div class="ps-loading">Hap skedën Xhiro për të ngarkuar të dhënat</div></div>
-    </div>
   </div>
 
   <!-- HISTORIKU -->
