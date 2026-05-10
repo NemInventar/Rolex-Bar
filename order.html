@@ -850,8 +850,10 @@ function porosiRe(){
   valgBord=null;
   document.getElementById('noter-inp').value='';
   document.getElementById('konfirmim').classList.remove('vis');
+  document.getElementById('bord-valgt').classList.remove('vis');
+  document.getElementById('zone-tabs').style.display='grid';
+  document.getElementById('bord-grid-wrap').classList.remove('vis');
   opdaterKurvBar();
-  renderBorde();
   renderGrid();
   window.scrollTo(0,0);
 }
