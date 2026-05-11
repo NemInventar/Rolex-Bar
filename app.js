@@ -1370,7 +1370,8 @@ function anuloOrdren(id){
 }
 
 function opdaterAabneBadge(){
-  const n=ordrer.filter(o=>o.status==='aaben').length;
+  const aabne=ordrer.filter(o=>o.status==='aaben');
+  const n=tavolina.filter(t=>aabne.some(o=>o.bord===t.nr)).length;
   const tab=document.getElementById('tab-aabne');
   const badge=tab.querySelector('.badge');
   if(n>0){if(!badge)tab.innerHTML+=`<span class="badge">${n}</span>`;else badge.textContent=n}
