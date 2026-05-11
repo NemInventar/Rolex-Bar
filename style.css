@@ -1464,6 +1464,32 @@ body{
 }
 #toast.vis{opacity:1;transform:translateY(0)}
 
+/* ─── ANALITIKA ──────────────────────────────────── */
+#analitika-side{padding-bottom:40px}
+.anal-topbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;padding:20px 20px 4px}
+.anal-topbar h2{font-size:1.15rem;font-weight:800;color:var(--tekst)}
+.anal-filter{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.anal-filter input[type=date]{padding:7px 10px;border:1.5px solid var(--border);border-radius:10px;font-size:.83rem;background:var(--bg2);color:var(--tekst);font-family:inherit;cursor:pointer}
+.anal-refresh-btn{padding:7px 14px;background:var(--brun);color:#fff;border:none;border-radius:10px;font-size:.88rem;font-weight:700;cursor:pointer;transition:background .15s}
+.anal-refresh-btn:hover{background:var(--brun-lys)}
+.anal-boks{background:var(--hvid);border-radius:16px;box-shadow:var(--shadow);padding:20px;margin:16px 20px 0}
+.anal-titull{font-size:.95rem;font-weight:800;color:var(--tekst);margin-bottom:16px}
+.anal-prod-rad{margin-bottom:12px}
+.anal-prod-info{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.anal-prod-rank{font-size:.75rem;font-weight:800;color:var(--tekst-lys);min-width:18px}
+.anal-prod-namn{font-size:.88rem;font-weight:600;color:var(--tekst);flex:1}
+.anal-prod-xhiro{font-size:.83rem;font-weight:700;color:var(--guld)}
+.anal-bar-wrap{position:relative;background:var(--bg2);border-radius:6px;height:24px;overflow:hidden}
+.anal-bar-fill{height:100%;background:rgba(201,150,59,.65);border-radius:6px;transition:width .4s ease}
+.anal-bar-lbl{position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:.75rem;font-weight:700;color:var(--tekst)}
+.anal-stafi-rad{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.anal-stafi-left{display:flex;align-items:center;gap:8px;min-width:140px}
+.anal-avatar-sm{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:800;color:#fff;flex-shrink:0}
+.anal-stafi-emri{font-size:.85rem;font-weight:600;color:var(--tekst);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100px}
+.anal-insight{margin-top:14px;font-size:.85rem;color:var(--tekst-lys);background:var(--bg2);padding:10px 14px;border-radius:10px;line-height:1.5}
+.anal-rek-item{padding:12px 14px;background:var(--bg2);border-radius:10px;margin-bottom:10px;font-size:.88rem;color:var(--tekst);line-height:1.6}
+.anal-rek-item:last-child{margin-bottom:0}
+
 /* ─── SCROLLBAR ──────────────────────────────────── */
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}

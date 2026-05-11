@@ -39,6 +39,7 @@
   <div class="tab" onclick="skiftTab('omsaetning')">📊 Xhiro</div>
   <div class="tab" onclick="skiftTab('historik')">📋 Historiku</div>
   <div class="tab" onclick="skiftTab('produkter')">⚙️ Cilësimet</div>
+  <div class="tab" onclick="skiftTab('analitika')" id="tab-analitika" style="display:none">📊 Analitika</div>
   <div class="tab" onclick="hapZRaport()" style="margin-left:auto">📄 Raport Z</div>
 </div>
 
@@ -186,7 +187,6 @@
       <select id="hist-betaling" onchange="opdaterHistorik()">
         <option value="">Të gjitha pagesat</option>
         <option value="kontant">Kesh</option>
-        <option value="kort">Kartë</option>
       </select>
       <select id="hist-status" onchange="opdaterHistorik()">
         <option value="">Të gjitha statuset</option>
@@ -238,6 +238,49 @@
       </div>
     </details>
 
+  </div>
+
+  <!-- ANALITIKA -->
+  <div class="side" id="analitika-side">
+    <div class="anal-topbar">
+      <h2>📊 Analitika</h2>
+      <div class="anal-filter">
+        <input type="date" id="anal-fra">
+        <span style="color:var(--tekst-lys)">–</span>
+        <input type="date" id="anal-til">
+        <button class="anal-refresh-btn" onclick="renderAnalitika()">↻ Ngarko</button>
+      </div>
+    </div>
+
+    <div class="anal-boks">
+      <h3 class="anal-titull">⏰ Orët me të ngarkuara</h3>
+      <div id="anal-orare-wrap"><div class="ps-loading">Zgjidhni periudhën dhe klikoni ↻</div></div>
+    </div>
+
+    <div class="anal-boks">
+      <h3 class="anal-titull">🏆 Produktet kryesore</h3>
+      <div id="anal-produkt-wrap"><div class="ps-loading">Zgjidhni periudhën dhe klikoni ↻</div></div>
+    </div>
+
+    <div class="anal-boks">
+      <h3 class="anal-titull">🪑 Analiza e tavolinave</h3>
+      <div id="anal-tavolina-wrap"><div class="ps-loading">Zgjidhni periudhën dhe klikoni ↻</div></div>
+    </div>
+
+    <div class="anal-boks">
+      <h3 class="anal-titull">👥 Performanca e stafit</h3>
+      <div id="anal-stafi-wrap"><div class="ps-loading">Zgjidhni periudhën dhe klikoni ↻</div></div>
+    </div>
+
+    <div class="anal-boks">
+      <h3 class="anal-titull">🔗 Çfarë porositet bashkë</h3>
+      <div id="anal-bashke-wrap"><div class="ps-loading">Zgjidhni periudhën dhe klikoni ↻</div></div>
+    </div>
+
+    <div class="anal-boks">
+      <h3 class="anal-titull">💡 Rekomandime</h3>
+      <div id="anal-rek-wrap"><div class="ps-loading">Zgjidhni periudhën dhe klikoni ↻</div></div>
+    </div>
   </div>
 
 </div>

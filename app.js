@@ -117,7 +117,8 @@ function konfirmoPin(){
 function logoutAdmin(){
   erAdmin=false;
   aktivBruger=null;
-  if(document.getElementById('produkter-side').classList.contains('aktiv')) skiftTab('pos');
+  const onAdminPage=['produkter-side','analitika-side'].some(id=>document.getElementById(id)?.classList.contains('aktiv'));
+  if(onAdminPage) skiftTab('pos');
   updateBrugerBadge();
   visToast('Dolët nga sistemi');
 }
@@ -222,6 +223,7 @@ function logoutStaff(){
 function updateBrugerBadge(){
   const badge=document.getElementById('bruger-badge');
   const btn=document.getElementById('admin-btn');
+  const analTab=document.getElementById('tab-analitika');
   if(!badge) return;
   if(aktivBruger){
     const idx=brugere.findIndex(b=>b.id===aktivBruger.id);
@@ -232,9 +234,11 @@ function updateBrugerBadge(){
     document.getElementById('bb-rol').textContent=erAdmin?'Admin':'Personel';
     badge.style.display='flex';
     if(btn) btn.style.display='none';
+    if(analTab) analTab.style.display=erAdmin?'':'none';
   } else {
     badge.style.display='none';
     if(btn){btn.style.display='';btn.textContent='🔒 Hyr';btn.classList.remove('aktiv')}
+    if(analTab) analTab.style.display='none';
   }
 }
 
@@ -502,7 +506,7 @@ function mbyllModal(id){document.getElementById(id).classList.remove('vis')}
 function skiftTab(tab) {
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('aktiv'));
   document.querySelectorAll('.side').forEach(s=>s.classList.remove('aktiv'));
-  const idx={'pos':0,'aabne':1,'ventende':2,'omsaetning':3,'historik':4,'produkter':5};
+  const idx={'pos':0,'aabne':1,'ventende':2,'omsaetning':3,'historik':4,'produkter':5,'analitika':6};
   const tabs=document.querySelectorAll('.tab');
   if(idx[tab]!==undefined) tabs[idx[tab]].classList.add('aktiv');
   document.getElementById(tab+'-side').classList.add('aktiv');
@@ -536,6 +540,25 @@ function skiftTab(tab) {
     }
     renderAdminProdukter();
     renderBrugereAdmin();
+  }
+  if(tab==='analitika'){
+    if(!erAdmin){
+      document.querySelectorAll('.tab').forEach(t=>t.classList.remove('aktiv'));
+      document.querySelectorAll('.side').forEach(s=>s.classList.remove('aktiv'));
+      document.querySelector('.tab').classList.add('aktiv');
+      document.getElementById('pos-side').classList.add('aktiv');
+      _pendingTab='analitika';
+      hapLoginModalNormal();
+      return;
+    }
+    // Default: last 30 days
+    if(!document.getElementById('anal-fra').value){
+      const now=new Date();
+      const d30=new Date(now);d30.setDate(d30.getDate()-30);
+      document.getElementById('anal-fra').value=`${d30.getFullYear()}-${String(d30.getMonth()+1).padStart(2,'0')}-${String(d30.getDate()).padStart(2,'0')}`;
+      document.getElementById('anal-til').value=sotDita();
+    }
+    renderAnalitika();
   }
 }
 
@@ -782,7 +805,7 @@ function visCelebrationPorosi(ordre){
 function visCelebrationPagese(ordre, kusuri){
   document.getElementById('cel-ikon').textContent='💰';
   document.getElementById('cel-titulli').textContent='Pagesa u krye!';
-  document.getElementById('cel-sub').textContent=`Tavolina ${ordre.bord} • ${ordre.betaling==='kontant'?'Kesh':'Kartë'} • ${euro(ordre.total)}`;
+  document.getElementById('cel-sub').textContent=`Tavolina ${ordre.bord} • Kesh • ${euro(ordre.total)}`;
   const kusuriBoks=document.getElementById('cel-kusuri-boks');
   if(kusuri>0.001){
     kusuriBoks.style.display='block';
@@ -920,12 +943,11 @@ function konfirmoPagesaKesh(){
 // =============================================
 // PAGUAJ TË GJITHA POROSITË E TAVOLINËS
 // =============================================
-function betalGjithe(bord, metoda){
+function betalGjithe(bord){
   const ordrerT=ordrer.filter(o=>o.status==='aaben'&&o.bord===bord);
   if(!ordrerT.length) return;
-  if(ordrerT.length===1){ betalOrdre(ordrerT[0].id, metoda); return; }
-  if(metoda==='kontant'){ hapKeshModalGjithe(bord); }
-  else { pageoOrdrerGjithe(bord,'kort',0); }
+  if(ordrerT.length===1){ betalOrdre(ordrerT[0].id); return; }
+  hapKeshModalGjithe(bord);
 }
 
 function pageoOrdrerGjithe(bord, metoda, kusuri=0){
@@ -965,7 +987,7 @@ function hapFaturaKombinuar(bord, ordrerList, total, kusuri){
   txt+=`${S}\n`;
   const totStr=euro(total);
   txt+=`${'TOTALI'.padEnd(32-totStr.length,' ')}${totStr}\n`;
-  const bet=ordrerList[0].betaling==='kontant'?'Kesh':'Kartë';
+  const bet='Kesh';
   txt+=`Paguar me: ${bet}\n`;
   if(kusuri>0.001) txt+=`Kusuri: ${euro(kusuri)}\n`;
   txt+=`${S}\n   Ju faleminderit! 🙏\n   Mirë se vini sërish`;
@@ -984,9 +1006,8 @@ function hapFaturaKombinuar(bord, ordrerList, total, kusuri){
 // =============================================
 // PAGESA
 // =============================================
-function betalOrdre(id,metoda){
-  if(metoda==='kontant') hapKeshModal(id);
-  else pageoOrdren(id,'kort',0);
+function betalOrdre(id){
+  hapKeshModal(id);
 }
 function pageoOrdren(id,metoda,kusuri=0){
   const o=ordrer.find(x=>x.id===id);
@@ -1116,8 +1137,7 @@ function renderAabneBorde(){
         <span class="tv-total-val">${euro(totalGjithe)}</span>
       </div>
       <div class="tv-acties">
-        <button class="tv-btn kesh" onclick="betalGjithe('${t.nr}','kontant')">💵 ${shumePorosi?'Paguaj gjithçka':'Kesh'}</button>
-        <button class="tv-btn karte" onclick="betalGjithe('${t.nr}','kort')">💳 ${shumePorosi?'Paguaj gjithçka':'Kartë'}</button>
+        <button class="tv-btn kesh" onclick="betalGjithe('${t.nr}')">💵 ${shumePorosi?'Paguaj gjithçka':'Kesh'}</button>
         <button class="tv-btn shto" onclick="fillBordAndGoToArke('${t.nr}')">➕ Shto porosi të re</button>
       </div>
     </div>`;
@@ -2076,6 +2096,113 @@ function printZRaport(){
 function opdaterUr(){
   const n=new Date();
   document.getElementById('clock').innerHTML=n.toLocaleDateString('sq-AL',{weekday:'long',day:'numeric',month:'long'})+'<br>'+n.toLocaleTimeString('sq-AL',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
+}
+
+// =============================================
+// ANALITIKA
+// =============================================
+let analChart=null;
+
+async function renderAnalitika(){
+  if(!erAdmin) return;
+  const fra=document.getElementById('anal-fra').value;
+  const til=document.getElementById('anal-til').value;
+  const ids=['anal-orare','anal-produkt','anal-tavolina','anal-stafi','anal-bashke','anal-rek'];
+  ids.forEach(id=>{const el=document.getElementById(id+'-wrap');if(el)el.innerHTML='<div class="ps-loading">Duke ngarkuar...</div>'});
+
+  let q=sb.from('ordrer')
+    .select('id,bord,total,betaling,oprettet,bruger_id,bruger_navn,antal_guests,ordre_linjer(navn,pris,antal)')
+    .eq('restaurant_id',RESTAURANT_ID).eq('status','betalt');
+  if(fra) q=q.gte('oprettet',_localIso(fra,'00:00:00'));
+  if(til) q=q.lte('oprettet',_localIso(til,'23:59:59'));
+  const {data,error}=await q;
+  const ingen='<div class="ps-loading">Nuk ka të dhëna për periudhën e zgjedhur</div>';
+  if(error||!data?.length){ids.forEach(id=>{const el=document.getElementById(id+'-wrap');if(el)el.innerHTML=ingen});return}
+  const dr=data;
+
+  // 1. Peak hours
+  const orarCount=new Array(24).fill(0);
+  dr.forEach(o=>{const h=new Date(new Date(o.oprettet).getTime()+2*3600000).getUTCHours();orarCount[h]++});
+  const orarEl=document.getElementById('anal-orare-wrap');
+  if(orarEl){
+    orarEl.innerHTML='<canvas id="anal-orar-chart" style="max-height:220px"></canvas>';
+    if(analChart) analChart.destroy();
+    const maxVal=Math.max(...orarCount)||1;
+    analChart=new Chart(document.getElementById('anal-orar-chart').getContext('2d'),{
+      type:'bar',
+      data:{labels:Array.from({length:24},(_,i)=>String(i).padStart(2,'0')+':00'),
+        datasets:[{label:'Porosi',data:orarCount,
+          backgroundColor:orarCount.map(v=>v===maxVal&&v>0?'rgba(201,150,59,.95)':'rgba(201,150,59,.4)'),
+          borderRadius:4}]},
+      options:{responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.raw+' porosi'}}},
+        scales:{y:{beginAtZero:true,ticks:{stepSize:1,precision:0}}}}
+    });
+    const peak=orarCount.indexOf(maxVal);
+    if(maxVal>0) orarEl.insertAdjacentHTML('beforeend',`<div class="anal-insight">Ora më e ngarkuar: <strong>${String(peak).padStart(2,'0')}:00–${String(peak+1).padStart(2,'0')}:00</strong> · <strong>${maxVal}</strong> porosi</div>`);
+  }
+
+  // 2. Product performance
+  const prodAgg={};
+  dr.forEach(o=>(o.ordre_linjer||[]).forEach(l=>{
+    if(!prodAgg[l.navn]) prodAgg[l.navn]={namn:l.navn,antal:0,xhiro:0};
+    prodAgg[l.navn].antal+=l.antal; prodAgg[l.navn].xhiro+=l.pris*l.antal;
+  }));
+  const prodSort=Object.values(prodAgg).sort((a,b)=>b.antal-a.antal).slice(0,10);
+  const prodEl=document.getElementById('anal-produkt-wrap');
+  if(prodEl){
+    const maxA=prodSort[0]?.antal||1;
+    prodEl.innerHTML=prodSort.map((p,i)=>`
+      <div class="anal-prod-rad">
+        <div class="anal-prod-info"><span class="anal-prod-rank">${i+1}.</span><span class="anal-prod-namn">${p.namn}</span><span class="anal-prod-xhiro">${euro(p.xhiro)}</span></div>
+        <div class="anal-bar-wrap"><div class="anal-bar-fill" style="width:${Math.round(p.antal/maxA*100)}%"></div><span class="anal-bar-lbl">${p.antal} cop.</span></div>
+      </div>`).join('')||ingen;
+  }
+
+  // 3. Table analysis
+  const tavAgg={};
+  dr.forEach(o=>{
+    if(!o.bord||o.bord==='–') return;
+    if(!tavAgg[o.bord]) tavAgg[o.bord]={bord:o.bord,porosi:0,xhiro:0,guests:0,guestOrders:0};
+    tavAgg[o.bord].porosi++; tavAgg[o.bord].xhiro+=parseFloat(o.total)||0;
+    if((o.antal_guests||0)>0){tavAgg[o.bord].guests+=o.antal_guests;tavAgg[o.bord].guestOrders++}
+  });
+  const tavSort=Object.values(tavAgg).sort((a,b)=>b.xhiro-a.xhiro);
+  const tavEl=document.getElementById('anal-tavolina-wrap');
+  if(tavEl) tavEl.innerHTML=!tavSort.length?ingen:
+    `<div class="ps-raekke ps-header-row"><span>Tavolina</span><span>Porosi</span><span>Mys. mes.</span><span>Xhiro</span></div>`+
+    tavSort.map((t,i)=>`<div class="ps-raekke${i%2?'':' alt'}"><span class="ps-namn">🪑 ${t.bord}</span><span>${t.porosi}</span><span>${t.guestOrders>0?(t.guests/t.guestOrders).toFixed(1):'–'}</span><span class="ps-xhiro">${euro(t.xhiro)}</span></div>`).join('');
+
+  // 4. Staff performance
+  const stafiAgg={};
+  dr.forEach(o=>{const key=o.bruger_id||'_anon';const navn=o.bruger_navn||'Pa caktuar';if(!stafiAgg[key])stafiAgg[key]={navn,porosi:0,xhiro:0};stafiAgg[key].porosi++;stafiAgg[key].xhiro+=parseFloat(o.total)||0});
+  const stafiSort=Object.values(stafiAgg).sort((a,b)=>b.xhiro-a.xhiro);
+  const stafiTot=stafiSort.reduce((s,r)=>s+r.xhiro,0);
+  const stafiEl=document.getElementById('anal-stafi-wrap');
+  if(stafiEl) stafiEl.innerHTML=!stafiSort.length?ingen:stafiSort.map((r,i)=>{
+    const pct=stafiTot>0?Math.round(r.xhiro/stafiTot*100):0;
+    const clr=BRUGER_COLORS[i%BRUGER_COLORS.length];
+    return `<div class="anal-stafi-rad"><div class="anal-stafi-left"><div class="anal-avatar-sm" style="background:${clr}">${r.navn.charAt(0).toUpperCase()}</div><span class="anal-stafi-emri">${r.navn}</span></div><div class="anal-bar-wrap" style="flex:1"><div class="anal-bar-fill" style="width:${pct}%;background:${clr}"></div><span class="anal-bar-lbl">${r.porosi} porosi · ${euro(r.xhiro)} · ${pct}%</span></div></div>`;
+  }).join('');
+
+  // 5. Co-occurrence
+  const pairs={};
+  dr.forEach(o=>{const it=(o.ordre_linjer||[]).map(l=>l.navn);for(let a=0;a<it.length;a++)for(let b=a+1;b<it.length;b++){const k=[it[a],it[b]].sort().join(' + ');pairs[k]=(pairs[k]||0)+1}});
+  const pairSort=Object.entries(pairs).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  const bashkeEl=document.getElementById('anal-bashke-wrap');
+  if(bashkeEl) bashkeEl.innerHTML=!pairSort.length?ingen:
+    `<div class="ps-raekke ps-header-row"><span>Kombinimi</span><span>Herë</span></div>`+
+    pairSort.map((p,i)=>`<div class="ps-raekke${i%2?'':' alt'}"><span class="ps-namn">${p[0]}</span><span class="ps-antal">${p[1]}×</span></div>`).join('');
+
+  // 6. Recommendations
+  const reks=[];
+  const peak=orarCount.indexOf(Math.max(...orarCount));
+  if(orarCount[peak]>0) reks.push(`⏰ Ora <strong>${String(peak).padStart(2,'0')}:00</strong> është ora juaj më e ngarkuar — planifikoni stafin sipas kësaj.`);
+  if(prodSort.length) reks.push(`🏆 <strong>${prodSort[0].namn}</strong> është produkti juaj bestseller me <strong>${prodSort[0].antal}</strong> porosi të shitura.`);
+  if(pairSort.length) reks.push(`🔗 <strong>${pairSort[0][0]}</strong> porositen bashkë ${pairSort[0][1]} herë — mendoni paketë çmimesh.`);
+  if(tavSort.length) reks.push(`🪑 Tavolina <strong>${tavSort[0].bord}</strong> gjeneron xhirën më të lartë (${euro(tavSort[0].xhiro)}).`);
+  if(stafiSort.length>1) reks.push(`👥 <strong>${stafiSort[0].navn}</strong> ka xhirën kryesore (${euro(stafiSort[0].xhiro)}), <strong>${stafiSort[stafiSort.length-1].navn}</strong> ka potencial rritjeje.`);
+  const rekEl=document.getElementById('anal-rek-wrap');
+  if(rekEl) rekEl.innerHTML=!reks.length?ingen:reks.map(r=>`<div class="anal-rek-item">${r}</div>`).join('');
 }
 
 // =============================================

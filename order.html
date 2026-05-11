@@ -303,6 +303,40 @@
   }
   #btn-porosi-re:hover{background:#2D1208}
 
+  /* ── GUEST COUNT ── */
+  #guest-modal{
+    display:none;position:fixed;inset:0;
+    background:rgba(0,0,0,.5);
+    align-items:center;justify-content:center;
+    z-index:400;padding:20px;
+  }
+  #guest-modal.vis{display:flex;animation:fadeIn .2s ease}
+  .guest-wrap{
+    background:var(--hvid);border-radius:22px;
+    padding:28px 24px 22px;width:100%;max-width:340px;
+    text-align:center;
+    box-shadow:0 8px 32px rgba(0,0,0,.22);
+  }
+  .guest-titull{font-size:1.3rem;font-weight:800;margin-bottom:6px;color:var(--tekst)}
+  .guest-sub{font-size:.88rem;color:var(--tekst-lys);margin-bottom:22px}
+  .guest-grid{
+    display:grid;grid-template-columns:repeat(5,1fr);
+    gap:10px;margin-bottom:18px;
+  }
+  .guest-nr{
+    aspect-ratio:1;background:var(--bg2);border:2px solid transparent;border-radius:12px;
+    font-size:1.2rem;font-weight:800;color:var(--tekst);
+    cursor:pointer;transition:all .12s;font-family:inherit;
+  }
+  .guest-nr:hover{background:var(--brun);color:#fff;border-color:var(--brun);transform:scale(1.07)}
+  .guest-nr:active{transform:scale(.93)}
+  .guest-kalo{
+    width:100%;padding:12px;background:none;border:1.5px solid var(--border);
+    border-radius:12px;font-size:.88rem;font-weight:700;color:var(--tekst-lys);
+    cursor:pointer;font-family:inherit;transition:all .12s;
+  }
+  .guest-kalo:hover{border-color:var(--tekst-lys);color:var(--tekst)}
+
   /* ── LOADING ── */
   #loading{
     display:flex;flex-direction:column;align-items:center;
@@ -484,6 +518,27 @@
   <button id="btn-porosi-re" onclick="porosiRe()">+ Porosi e re</button>
 </div>
 
+<!-- GUEST COUNT MODAL -->
+<div id="guest-modal">
+  <div class="guest-wrap">
+    <div class="guest-titull">👥 Sa veta janë ulur?</div>
+    <div class="guest-sub">Zgjidhni numrin e mysafirëve</div>
+    <div class="guest-grid">
+      <button class="guest-nr" onclick="zgjedhGjestet(1)">1</button>
+      <button class="guest-nr" onclick="zgjedhGjestet(2)">2</button>
+      <button class="guest-nr" onclick="zgjedhGjestet(3)">3</button>
+      <button class="guest-nr" onclick="zgjedhGjestet(4)">4</button>
+      <button class="guest-nr" onclick="zgjedhGjestet(5)">5</button>
+      <button class="guest-nr" onclick="zgjedhGjestet(6)">6</button>
+      <button class="guest-nr" onclick="zgjedhGjestet(7)">7</button>
+      <button class="guest-nr" onclick="zgjedhGjestet(8)">8</button>
+      <button class="guest-nr" onclick="zgjedhGjestet(9)">9</button>
+      <button class="guest-nr" onclick="zgjedhGjestet(0)">0</button>
+    </div>
+    <button class="guest-kalo" onclick="kaloGjestet()">Kalo →</button>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script>
@@ -493,7 +548,7 @@ const RESTAURANT_ID = '0860de87-efd6-4ef4-b191-7635bc44e866';
 
 let sb, kategorier=[], produkter=[], tavolina=[], brugere=[];
 let kurv=[], aktivKat='alle', valgBord=null, aktivZone='brendshëm';
-let loggedInBruger=null, _lsPinBruger=null, _lsPin='';
+let loggedInBruger=null, _lsPinBruger=null, _lsPin='', _guestOrdreId=null;
 
 // ── AUTH HELPERS ──
 async function hashPin(pin){
@@ -843,10 +898,11 @@ async function dergoBestillim(){
     const {error:linjeErr} = await sb.from('ordre_linjer').insert(linjer);
     if(linjeErr) throw linjeErr;
 
-    // Sukses
+    // Sukses — show guest count picker before confirmation
     document.getElementById('kurv-sheet').classList.remove('vis');
     document.getElementById('konf-sub').textContent=`Tavolina ${valgBord} • Porosi #${nextNr} • ${euro(total)}`;
-    document.getElementById('konfirmim').classList.add('vis');
+    _guestOrdreId=ordreId;
+    document.getElementById('guest-modal').classList.add('vis');
 
   } catch(e) {
     console.error(e);
@@ -854,6 +910,21 @@ async function dergoBestillim(){
     btn.disabled=false;
     btn.textContent='✓ Dërgo porosinë';
   }
+}
+
+async function zgjedhGjestet(n){
+  document.getElementById('guest-modal').classList.remove('vis');
+  if(_guestOrdreId && n>0){
+    await sb.from('ordrer').update({antal_guests:n}).eq('id',_guestOrdreId);
+  }
+  _guestOrdreId=null;
+  document.getElementById('konfirmim').classList.add('vis');
+}
+
+function kaloGjestet(){
+  document.getElementById('guest-modal').classList.remove('vis');
+  _guestOrdreId=null;
+  document.getElementById('konfirmim').classList.add('vis');
 }
 
 function porosiRe(){
