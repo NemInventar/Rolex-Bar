@@ -7,6 +7,7 @@ let aktivBruger = null; // {id, navn, rolle} — current session user
 let _xhiroRel = []; // cached paid orders for current Xhiro period
 let _histArkivMod = false;
 let _kassaMbyllur = false;
+let _pendingTab = null;
 let pinInput = '';
 let pinMod = 'login'; // 'login' | 'pin-ri' | 'pin-konfirmo'
 let pinRiTemp = '';
@@ -79,6 +80,7 @@ function konfirmoPin(){
       mbyllModal('login-modal');
       visToast('Mirë se vini, Admin! 🔓');
       updateBrugerBadge();
+      if(_pendingTab){const t=_pendingTab;_pendingTab=null;skiftTab(t);}
       pinInput='';
     } else {
       tregoPinGabim('❌ Kod i gabuar! Provoni sërish - ma ha karrin.');
@@ -528,7 +530,7 @@ function skiftTab(tab) {
       document.querySelectorAll('.side').forEach(s=>s.classList.remove('aktiv'));
       document.querySelector('.tab').classList.add('aktiv');
       document.getElementById('pos-side').classList.add('aktiv');
-      if(!aktivBruger) hapLoginModalNormal(); // nobody logged in → offer admin login
+      if(!aktivBruger){_pendingTab='produkter';hapLoginModalNormal();}
       visToast('🔒 Keni nevojë për login Admin!','gabim');
       return;
     }
