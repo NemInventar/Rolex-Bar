@@ -2073,7 +2073,7 @@ function printZRaport(){
 // =============================================
 function opdaterUr(){
   const n=new Date();
-  document.getElementById('clock').innerHTML=n.toLocaleDateString('sq-AL',{weekday:'long',day:'numeric',month:'long'})+'<br>'+n.toLocaleTimeString('sq-AL',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  document.getElementById('clock').innerHTML=n.toLocaleDateString('sq-AL',{weekday:'long',day:'numeric',month:'long'})+'<br>'+n.toLocaleTimeString('sq-AL',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
 }
 
 // =============================================
