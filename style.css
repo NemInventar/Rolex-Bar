@@ -1475,7 +1475,10 @@ body{
 .anal-filter input[type=date]{padding:7px 10px;border:1.5px solid var(--border);border-radius:10px;font-size:.83rem;background:var(--bg2);color:var(--tekst);font-family:inherit;cursor:pointer}
 .anal-refresh-btn{padding:7px 14px;background:var(--brun);color:#fff;border:none;border-radius:10px;font-size:.88rem;font-weight:700;cursor:pointer;transition:background .15s}
 .anal-refresh-btn:hover{background:var(--brun-lys)}
-.anal-boks{background:var(--hvid);border-radius:16px;box-shadow:var(--shadow);padding:20px;margin:16px 20px 0}
+.anal-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:16px 20px 24px}
+.anal-boks-wide{grid-column:1/-1}
+.anal-boks{background:var(--hvid);border-radius:16px;box-shadow:var(--shadow);padding:20px;margin:0}
+@media(max-width:900px){.anal-grid{grid-template-columns:1fr}}
 .anal-titull{font-size:.95rem;font-weight:800;color:var(--tekst);margin-bottom:16px}
 .anal-kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
 @media(max-width:500px){.anal-kpi-grid{grid-template-columns:1fr}}
