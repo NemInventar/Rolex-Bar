@@ -304,7 +304,7 @@ let celebrationOrdreId = null;
 // =============================================
 const SUPABASE_URL = 'https://tsaxlluggcxdrvapaypp.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRzYXhsbHVnZ2N4ZHJ2YXBheXBwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzNTU0MTAsImV4cCI6MjA5MzkzMTQxMH0.bIXF0dXrWSgtpYCpNzZz5Rh5BB_0R37dzNp_8jgFZGM';
-const RESTAURANT_ID = '0860de87-efd6-4ef4-b191-7635bc44e866';
+const RESTAURANT_ID = 'bed2841c-eb79-47de-b754-3bca27d35050';
 let sb; // assigned after DOM ready
 
 // =============================================
