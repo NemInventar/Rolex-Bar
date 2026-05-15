@@ -1,7 +1,7 @@
 {
-  "name": "Artizano POS",
-  "short_name": "Artizano",
-  "description": "Point of Sale për Artizano — Eat & More",
+  "name": "Rolex Bar POS",
+  "short_name": "Rolex Bar",
+  "description": "Point of Sale për Rolex Bar",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

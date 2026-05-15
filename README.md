@@ -1,4 +1,4 @@
-# Artizano POS
+# Rolex Bar POS
 
 Point of Sale-app til pizzeriaet. Albansk UI, € + 18 % moms (Kosovo).
 

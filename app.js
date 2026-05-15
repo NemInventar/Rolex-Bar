@@ -323,8 +323,8 @@ async function initMenuData() {
     {id:'k7',navn:'🥤 Pije',sort:7},{id:'k8',navn:'🍺 Birra',sort:8},
   ];
   produkter = [
-    {id:'p102',navn:'Picë Artizano (M)',kategori_id:'k1',pris:5.00,ikon:'🍕',beskrivelse:'E mesme',udsolgt:false},
-    {id:'p103',navn:'Picë Artizano (L)',kategori_id:'k1',pris:6.00,ikon:'🍕',beskrivelse:'E madhe',udsolgt:false},
+    {id:'p102',navn:'Picë Rolex Bar (M)',kategori_id:'k1',pris:5.00,ikon:'🍕',beskrivelse:'E mesme',udsolgt:false},
+    {id:'p103',navn:'Picë Rolex Bar (L)',kategori_id:'k1',pris:6.00,ikon:'🍕',beskrivelse:'E madhe',udsolgt:false},
     {id:'p105',navn:'Margarita (M)',kategori_id:'k1',pris:4.00,ikon:'🍕',beskrivelse:'E mesme',udsolgt:false},
     {id:'p106',navn:'Margarita (L)',kategori_id:'k1',pris:4.00,ikon:'🍕',beskrivelse:'E madhe',udsolgt:false},
     {id:'p108',navn:'Pershute Fungio (M)',kategori_id:'k1',pris:4.00,ikon:'🍕',beskrivelse:'E mesme',udsolgt:false},
@@ -362,7 +362,7 @@ async function initMenuData() {
     {id:'p402',navn:'Chicken Burger',kategori_id:'k4',pris:3.00,ikon:'🍔',beskrivelse:'',udsolgt:false},
     {id:'p403',navn:'Cheese Burger',kategori_id:'k4',pris:3.50,ikon:'🍔',beskrivelse:'',udsolgt:false},
     {id:'p404',navn:'Egg Burger',kategori_id:'k4',pris:3.50,ikon:'🍔',beskrivelse:'',udsolgt:false},
-    {id:'p405',navn:'Artizano Burger',kategori_id:'k4',pris:4.50,ikon:'🍔',beskrivelse:'Signatur burger',udsolgt:false},
+    {id:'p405',navn:'Rolex Bar Burger',kategori_id:'k4',pris:4.50,ikon:'🍔',beskrivelse:'Signatur burger',udsolgt:false},
     {id:'p406',navn:'Sandwich Pule',kategori_id:'k4',pris:3.50,ikon:'🥪',beskrivelse:'',udsolgt:false},
     {id:'p407',navn:'Sandwich Përshuté',kategori_id:'k4',pris:3.50,ikon:'🥪',beskrivelse:'',udsolgt:false},
     {id:'p408',navn:'Sandwich Tuna',kategori_id:'k4',pris:3.50,ikon:'🥪',beskrivelse:'',udsolgt:false},
@@ -978,7 +978,7 @@ function hapFaturaKombinuar(bord, ordrerList, total, kusuri){
   const tani=new Date();
   const ds=tani.toLocaleDateString('sq-AL')+' '+tani.toLocaleTimeString('sq-AL',{hour:'2-digit',minute:'2-digit'});
   const S='================================';
-  let txt=`        ARTIZANO\n     Eat & More\n${S}\n`;
+  let txt=`        ROLEX BAR\n     Eat & More\n${S}\n`;
   txt+=`Data: ${ds}\nTavolina: ${bord}\n`;
   txt+=`${S}\n`;
   ordrerList.forEach((o,i)=>{
@@ -1459,7 +1459,7 @@ function hapFature(ordre){
   const d=new Date(ordre.betalt||ordre.oprettet);
   const ds=d.toLocaleDateString('sq-AL')+' '+d.toLocaleTimeString('sq-AL',{hour:'2-digit',minute:'2-digit'});
   const S='================================';
-  let t=`        ARTIZANO\n     Eat & More\n${S}\n`;
+  let t=`        ROLEX BAR\n     Eat & More\n${S}\n`;
   t+=`Data: ${ds}\nPorosi nr.: #${ordre.ordre_nummer}\n`;
   if(ordre.bord&&ordre.bord!=='–') t+=`Tavolina: ${ordre.bord}\n`;
   if(ordre.bruger_navn) t+=`Kamarieri: ${ordre.bruger_navn}\n`;
@@ -1483,7 +1483,7 @@ function printFature(){
   const d=new Date(o.betalt||o.oprettet);
   const ds=d.toLocaleDateString('sq-AL')+' '+d.toLocaleTimeString('sq-AL',{hour:'2-digit',minute:'2-digit'});
   document.getElementById('print-area').innerHTML=`<div style="width:80mm;font-family:'Courier New',monospace;font-size:12px;padding:4mm">
-    <div style="text-align:center;font-size:15px;font-weight:bold;margin-bottom:3px">ARTIZANO</div>
+    <div style="text-align:center;font-size:15px;font-weight:bold;margin-bottom:3px">ROLEX BAR</div>
     <div style="text-align:center;font-size:10px;margin-bottom:7px">Eat & More</div>
     <div style="border-top:1px dashed #000;margin:5px 0"></div>
     <div>Data: ${ds}</div><div>Porosi: #${o.ordre_nummer}</div>
@@ -1664,7 +1664,7 @@ function sorterShitjet(key,el){
 function eksporterCSV(){
   let csv='Porosi,Data,Totali,Pagesa,Artikujt\n';
   ordrer.filter(o=>o.status==='betalt').forEach(o=>{const it=o.items.map(i=>i.antal+'x '+i.produkt_navn).join(' | ');csv+=`${o.ordre_nummer},"${formatData(o.oprettet)}",${o.total.toFixed(2)},${o.betaling},"${it}"\n`});
-  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));a.download=`artizano_${sotDita()}.csv`;a.click();
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));a.download=`rolex_bar_${sotDita()}.csv`;a.click();
 }
 
 // ─── PERSONELI (USER MANAGEMENT) ─────────────
@@ -2058,7 +2058,7 @@ function hapFatureGrup(key){
   const d=new Date(ordrerList[ordrerList.length-1].betalt||ordrerList[ordrerList.length-1].oprettet);
   const ds=d.toLocaleDateString('sq-AL')+' '+d.toLocaleTimeString('sq-AL',{hour:'2-digit',minute:'2-digit'});
   const S='================================';
-  let t=`        ARTIZANO\n     Eat & More\n${S}\n`;
+  let t=`        ROLEX BAR\n     Eat & More\n${S}\n`;
   t+=`Data: ${ds}\nTavolina: ${bord}\n${S}\n`;
   ordrerList.forEach((o,i)=>{
     const oKoha=new Date(o.oprettet).toLocaleTimeString('sq-AL',{hour:'2-digit',minute:'2-digit'});
@@ -2163,7 +2163,7 @@ async function hapZRaport(){
   const tvsh=dr.reduce((s,o)=>s+(o.moms||0),0);
   const xhiro=dr.reduce((s,o)=>s+o.total,0);
   const d=new Date();
-  let t=`======== RAPORT Z ========\nArtizano – Eat & More\nData: ${d.toLocaleDateString('sq-AL')}\nGjeneruar: ${d.toLocaleTimeString('sq-AL')}\n==========================\nNr. transaksioneve: ${dr.length}\n==========================\nKesh:      ${euro(kesh)}\nKartë/Mob: ${euro(karte)}\n--------------------------\nXhiro:     ${euro(xhiro)}\nTVSH (18%):${euro(tvsh)}\nNeto:      ${euro(xhiro-tvsh)}\n==========================\nGjendja e kasës:\nJu lutemi numëroni manualisht\n==========================`;
+  let t=`======== RAPORT Z ========\nRolex Bar\nData: ${d.toLocaleDateString('sq-AL')}\nGjeneruar: ${d.toLocaleTimeString('sq-AL')}\n==========================\nNr. transaksioneve: ${dr.length}\n==========================\nKesh:      ${euro(kesh)}\nKartë/Mob: ${euro(karte)}\n--------------------------\nXhiro:     ${euro(xhiro)}\nTVSH (18%):${euro(tvsh)}\nNeto:      ${euro(xhiro-tvsh)}\n==========================\nGjendja e kasës:\nJu lutemi numëroni manualisht\n==========================`;
   document.getElementById('zrap-indhold').textContent=t;
 }
 function printZRaport(){

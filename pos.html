@@ -761,7 +761,7 @@ let pinInput = '';
 let pinMod = 'login'; // 'login' | 'pin-ri' | 'pin-konfirmo'
 let pinRiTemp = '';
 
-function getPinKod(){ return localStorage.getItem('artizano_pin')||'88888888'; }
+function getPinKod(){ return localStorage.getItem('rolex_bar_pin')||'88888888'; }
 
 // =============================================
 // ADMIN / PIN
@@ -846,7 +846,7 @@ function konfirmoPin(){
   }
   if(pinMod==='pin-konfirmo'){
     if(pinInput===pinRiTemp){
-      localStorage.setItem('artizano_pin',pinInput);
+      localStorage.setItem('rolex_bar_pin',pinInput);
       mbyllModal('login-modal');
       visToast('✓ Kodi u ndryshua me sukses!');
       pinInput=''; pinRiTemp='';
@@ -906,7 +906,7 @@ let undoOrdreId = null, undoTimer = null, undoSekundat = 0;
 // DATA
 // =============================================
 function initMenuData() {
-  if (localStorage.getItem('artizano_init')) return;
+  if (localStorage.getItem('rolex_bar_init')) return;
   kategorier = [
     {id:'k1',navn:'🍕 Pizza',sort:1},{id:'k2',navn:'🥩 Mishërat',sort:2},
     {id:'k3',navn:'🔥 Qebapa',sort:3},{id:'k4',navn:'🍔 Burgera & Döner',sort:4},
@@ -1010,14 +1010,14 @@ function initMenuData() {
   ];
   ordrer = [];
   gemData();
-  localStorage.setItem('artizano_init','1');
+  localStorage.setItem('rolex_bar_init','1');
 }
-function gemData(){localStorage.setItem('artizano_kat',JSON.stringify(kategorier));localStorage.setItem('artizano_prod',JSON.stringify(produkter));localStorage.setItem('artizano_ordrer',JSON.stringify(ordrer))}
-function gemTavolina(){localStorage.setItem('artizano_tavolina',JSON.stringify(tavolina))}
-function loadData(){kategorier=JSON.parse(localStorage.getItem('artizano_kat')||'[]');produkter=JSON.parse(localStorage.getItem('artizano_prod')||'[]');ordrer=JSON.parse(localStorage.getItem('artizano_ordrer')||'[]');tavolina=JSON.parse(localStorage.getItem('artizano_tavolina')||'[]')}
+function gemData(){localStorage.setItem('rolex_bar_kat',JSON.stringify(kategorier));localStorage.setItem('rolex_bar_prod',JSON.stringify(produkter));localStorage.setItem('rolex_bar_ordrer',JSON.stringify(ordrer))}
+function gemTavolina(){localStorage.setItem('rolex_bar_tavolina',JSON.stringify(tavolina))}
+function loadData(){kategorier=JSON.parse(localStorage.getItem('rolex_bar_kat')||'[]');produkter=JSON.parse(localStorage.getItem('rolex_bar_prod')||'[]');ordrer=JSON.parse(localStorage.getItem('rolex_bar_ordrer')||'[]');tavolina=JSON.parse(localStorage.getItem('rolex_bar_tavolina')||'[]')}
 
 function initTavolinat(){
-  if(localStorage.getItem('artizano_tavolina')) return;
+  if(localStorage.getItem('rolex_bar_tavolina')) return;
   // 10 tavolina si parazgjedhje
   tavolina=Array.from({length:10},(_,i)=>({id:'tv'+(i+1),nr:String(i+1),emri:'Tavolina '+(i+1)}));
   gemTavolina();
@@ -2034,7 +2034,7 @@ function opdaterOmsaetning(){
 function eksporterCSV(){
   let csv='Porosi,Data,Totali,Pagesa,Artikujt\n';
   ordrer.filter(o=>o.status==='betalt').forEach(o=>{const it=o.items.map(i=>i.antal+'x '+i.produkt_navn).join(' | ');csv+=`${o.ordre_nummer},"${formatData(o.oprettet)}",${o.total.toFixed(2)},${o.betaling},"${it}"\n`});
-  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));a.download=`artizano_${sotDita()}.csv`;a.click();
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));a.download=`rolex_bar_${sotDita()}.csv`;a.click();
 }
 
 // =============================================

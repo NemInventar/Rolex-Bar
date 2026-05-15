@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Artizano — Porosi</title>
+<title>Rolex Bar — Porosi</title>
 <meta name="theme-color" content="#3B1F0E">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Porosi">
@@ -429,7 +429,7 @@
 
 <!-- LOGIN SCREEN -->
 <div id="login-ekran">
-  <div class="ls-logo">Artizano <span>Porosi</span></div>
+  <div class="ls-logo">Rolex Bar <span>Porosi</span></div>
   <div id="ls-sub">Identifikoni veten për të vazhduar</div>
   <div id="ls-user-grid"></div>
   <div id="ls-pin-wrap">
@@ -448,7 +448,7 @@
 </div>
 
 <div id="header">
-  <h1>Artizano <span>Porosi</span></h1>
+  <h1>Rolex Bar <span>Porosi</span></h1>
   <div style="display:flex;align-items:center;gap:10px">
     <button id="ls-bruger-badge" onclick="lsLogout()"></button>
     <div id="kurv-badge">0</div>
@@ -609,7 +609,7 @@ async function lsKonfirmo(){
   const hash=await hashPin(_lsPin);
   if(hash===_lsPinBruger.pin_hash){
     loggedInBruger={id:_lsPinBruger.id,navn:_lsPinBruger.navn,rolle:_lsPinBruger.rolle};
-    sessionStorage.setItem('artizano_bruger',JSON.stringify(loggedInBruger));
+    sessionStorage.setItem('rolex_bar_bruger',JSON.stringify(loggedInBruger));
     lsVizatoApp();
   } else {
     document.getElementById('ls-pin-gabim').textContent='❌ PIN i gabuar!';
@@ -636,7 +636,7 @@ function lsVizatoApp(){
 function lsLogout(){
   if(!confirm('Dilni nga sesioni i '+loggedInBruger.navn+'?')) return;
   loggedInBruger=null;
-  sessionStorage.removeItem('artizano_bruger');
+  sessionStorage.removeItem('rolex_bar_bruger');
   _lsPin='';_lsPinBruger=null;
   document.getElementById('ls-bruger-badge').style.display='none';
   document.getElementById('app').style.display='none';
@@ -669,9 +669,9 @@ async function init(){
 
   document.getElementById('loading').style.display='none';
 
-  const saved=sessionStorage.getItem('artizano_bruger');
+  const saved=sessionStorage.getItem('rolex_bar_bruger');
   if(saved){
-    try{loggedInBruger=JSON.parse(saved)}catch(e){sessionStorage.removeItem('artizano_bruger')}
+    try{loggedInBruger=JSON.parse(saved)}catch(e){sessionStorage.removeItem('rolex_bar_bruger')}
   }
   if(loggedInBruger){lsVizatoApp()}
   else{renderLoginScreen()}
