@@ -1167,38 +1167,40 @@ body{
 .kvit-print-btn:hover{background:var(--brun-lys)}
 
 /* ─── KESH MODAL ─────────────────────────────────── */
-#kesh-modal .modal{max-width:360px}
+#kesh-modal .modal{max-width:360px;padding:18px 18px 14px}
+#kesh-modal .modal h2{margin-bottom:12px;padding-bottom:10px}
+#kesh-modal .modal-btns{margin-top:8px}
 .kesh-info{
-  background:var(--bg);border-radius:12px;
-  padding:16px;margin-bottom:16px;text-align:center;
+  background:var(--bg);border-radius:10px;
+  padding:10px;margin-bottom:10px;text-align:center;
 }
 .kesh-totali-label{
-  font-size:.72rem;font-weight:700;color:var(--tekst-lys);
-  text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;
+  font-size:.68rem;font-weight:700;color:var(--tekst-lys);
+  text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;
 }
-.kesh-totali-val{font-size:2.1rem;font-weight:800;color:var(--tekst);font-variant-numeric:tabular-nums}
+.kesh-totali-val{font-size:1.7rem;font-weight:800;color:var(--tekst);font-variant-numeric:tabular-nums}
 .kesh-dhene-display{
   background:var(--hvid);border:2px solid var(--guld);
-  border-radius:12px;padding:14px;text-align:center;margin-bottom:12px;
+  border-radius:10px;padding:9px;text-align:center;margin-bottom:8px;
 }
-.kesh-dhene-label{font-size:.7rem;font-weight:700;color:var(--tekst-lys);text-transform:uppercase;letter-spacing:.4px}
+.kesh-dhene-label{font-size:.68rem;font-weight:700;color:var(--tekst-lys);text-transform:uppercase;letter-spacing:.4px}
 .kesh-dhene-val{
-  font-size:2.3rem;font-weight:800;color:var(--tekst);
-  min-height:44px;letter-spacing:1px;font-variant-numeric:tabular-nums;
+  font-size:1.9rem;font-weight:800;color:var(--tekst);
+  min-height:36px;letter-spacing:1px;font-variant-numeric:tabular-nums;
 }
 .kesh-kusuri{
-  background:var(--groen);border-radius:12px;
-  padding:13px;text-align:center;margin-bottom:14px;transition:all .2s;
+  background:var(--groen);border-radius:10px;
+  padding:9px;text-align:center;margin-bottom:10px;transition:all .2s;
 }
 .kesh-kusuri.negativ{background:var(--roed)}
-.kesh-kusuri-label{font-size:.7rem;font-weight:700;color:rgba(255,255,255,.75);text-transform:uppercase;letter-spacing:.4px}
-.kesh-kusuri-val{font-size:1.8rem;font-weight:800;color:#fff;font-variant-numeric:tabular-nums}
+.kesh-kusuri-label{font-size:.68rem;font-weight:700;color:rgba(255,255,255,.75);text-transform:uppercase;letter-spacing:.4px}
+.kesh-kusuri-val{font-size:1.5rem;font-weight:800;color:#fff;font-variant-numeric:tabular-nums}
 
 /* Numpad */
-.numpad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.numpad{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px}
 .np-btn{
-  padding:15px;background:var(--bg);border:1.5px solid var(--border);
-  border-radius:12px;cursor:pointer;font-size:1.25rem;font-weight:700;
+  padding:11px;background:var(--bg);border:1.5px solid var(--border);
+  border-radius:10px;cursor:pointer;font-size:1.15rem;font-weight:700;
   color:var(--tekst);transition:all .12s;font-family:inherit;
 }
 .np-btn:hover{background:var(--brun);color:#fff;border-color:var(--brun)}
@@ -1207,8 +1209,8 @@ body{
 .np-btn.back{background:var(--bg2);color:var(--tekst-lys)}
 .np-btn.zero{grid-column:span 2}
 .np-konfirmo{
-  width:100%;padding:15px;background:var(--groen);color:#fff;border:none;
-  border-radius:12px;cursor:pointer;font-size:1rem;font-weight:700;
+  width:100%;padding:11px;background:var(--groen);color:#fff;border:none;
+  border-radius:10px;cursor:pointer;font-size:.95rem;font-weight:700;
   transition:all .15s;font-family:inherit;letter-spacing:.2px;
   box-shadow:0 2px 8px rgba(16,185,129,.25);
 }
