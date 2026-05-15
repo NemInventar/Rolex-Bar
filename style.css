@@ -1468,7 +1468,7 @@ body{
 #toast.vis{opacity:1;transform:translateY(0)}
 
 /* ─── ANALITIKA ──────────────────────────────────── */
-#analitika-side{padding-bottom:40px}
+#analitika-side{padding-bottom:40px;overflow-y:auto}
 .anal-topbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;padding:20px 20px 4px}
 .anal-topbar h2{font-size:1.15rem;font-weight:800;color:var(--tekst)}
 .anal-filter{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
