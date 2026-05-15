@@ -750,8 +750,11 @@ function opretBestilling(){
       return;
     }
   } else {
-    // Nëse nuk është zgjedhur tavolina, paralajmëro por mos ndalo
-    visToast('Kujdes: nuk keni zgjedhur tavolinë!','info');
+    bordInput.classList.add('gabim');
+    gabimDiv.style.display='block';
+    gabimDiv.textContent='⚠ Zgjidhni tavolinën para se të dërgoni porosinë!';
+    bordInput.focus();
+    return;
   }
 
   // Pastro gabimin nëse ishte
