@@ -2581,17 +2581,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     opdaterAabneBadge();
   }, 8000);
 
-  // Auto-logout after 10 minutes of inactivity
+  // Auto-logout after 30 seconds of inactivity
   let _inactivityTimer=null;
   function _resetInactivity(){
     if(!aktivBruger&&!erAdmin) return;
     clearTimeout(_inactivityTimer);
     _inactivityTimer=setTimeout(()=>{
       if(aktivBruger||erAdmin){
-        visToast('U çkyçët automatikisht pas 10 minutash joaktiviteti','info');
         logoutBruger();
+        hapBrugerPicker();
       }
-    },10*60*1000);
+    },30*1000);
   }
   ['mousemove','mousedown','keydown','touchstart','scroll','click'].forEach(ev=>
     document.addEventListener(ev,_resetInactivity,{passive:true})
