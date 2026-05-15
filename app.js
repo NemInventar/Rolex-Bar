@@ -2178,6 +2178,163 @@ function opdaterUr(){
 let analChart=null, analForecastChart=null;
 const MUAJT_SQ=['Janar','Shkurt','Mars','Prill','Maj','Qershor','Korrik','Gusht','Shtator','Tetor','Nëntor','Dhjetor'];
 
+async function renderUgensAnalyse(){
+  const el=document.getElementById('anal-uge-wrap');
+  if(!el) return;
+  el.innerHTML='<div class="ps-loading">Analyserer ugen...</div>';
+
+  // Week boundaries in Kosovo local time (UTC+2)
+  const nowUTC=Date.now();
+  const nowLocal=new Date(nowUTC+2*3600000);
+  const todayStr=nowLocal.toISOString().split('T')[0];
+  const dow=nowLocal.getUTCDay(); // 0=Sun
+  const daysFromMon=dow===0?6:dow-1;
+  const daysElapsed=daysFromMon+1;
+
+  const thisMonLocal=new Date(nowLocal);
+  thisMonLocal.setUTCDate(nowLocal.getUTCDate()-daysFromMon);
+  const thisMonStr=thisMonLocal.toISOString().split('T')[0];
+
+  const lastMonLocal=new Date(thisMonLocal);
+  lastMonLocal.setUTCDate(thisMonLocal.getUTCDate()-7);
+  const lastMonStr=lastMonLocal.toISOString().split('T')[0];
+
+  const lastSunLocal=new Date(thisMonLocal);
+  lastSunLocal.setUTCDate(thisMonLocal.getUTCDate()-1);
+  const lastSunStr=lastSunLocal.toISOString().split('T')[0];
+
+  const [twRes,lwRes]=await Promise.all([
+    sb.from('ordrer').select('id,oprettet,total,antal_guests,bord,bruger_id,bruger_navn,ordre_linjer(navn,antal)')
+      .eq('restaurant_id',RESTAURANT_ID).eq('status','betalt')
+      .gte('oprettet',_localIso(thisMonStr,'00:00:00')).lte('oprettet',_localIso(todayStr,'23:59:59')),
+    sb.from('ordrer').select('id,oprettet,total,antal_guests,bord,bruger_id,bruger_navn,ordre_linjer(navn,antal)')
+      .eq('restaurant_id',RESTAURANT_ID).eq('status','betalt')
+      .gte('oprettet',_localIso(lastMonStr,'00:00:00')).lte('oprettet',_localIso(lastSunStr,'23:59:59'))
+  ]);
+
+  const tw=twRes.data||[], lw=lwRes.data||[];
+  const hasLast=lw.length>0;
+
+  if(!tw.length&&!lw.length){
+    el.innerHTML='<div class="anal-insight">Ingen ordredata endnu — analysen vises når de første ordrer er registreret.</div>';
+    return;
+  }
+
+  // ── Helpers ──
+  const sum=arr=>arr.reduce((s,o)=>s+(parseFloat(o.total)||0),0);
+  const pctChg=(a,b)=>b>0?Math.round((a-b)/b*100):null;
+  const fmtPct=n=>(n>=0?'+':'')+n+'%';
+  const localH=o=>new Date(new Date(o.oprettet).getTime()+2*3600000).getUTCHours();
+  const stdDev=arr=>{if(arr.length<2)return 0;const m=arr.reduce((s,v)=>s+v,0)/arr.length;return Math.sqrt(arr.reduce((s,v)=>s+(v-m)**2,0)/arr.length)};
+  const dayKey=o=>new Date(new Date(o.oprettet).getTime()+2*3600000).toISOString().split('T')[0];
+  const bold=s=>`<strong>${s}</strong>`;
+
+  // ── Metrics ──
+  const twRev=sum(tw), lwRev=sum(lw);
+  const twCount=tw.length, lwCount=lw.length;
+  const twAOV=twCount?twRev/twCount:0, lwAOV=lwCount?lwRev/lwCount:0;
+  const revChg=pctChg(twRev,lwRev), cntChg=pctChg(twCount,lwCount), aovChg=pctChg(twAOV,lwAOV);
+
+  // Guest counts
+  const withG=arr=>arr.filter(o=>(o.antal_guests||0)>0);
+  const avgG=arr=>{const g=withG(arr);return g.length?g.reduce((s,o)=>s+(o.antal_guests||0),0)/g.length:0};
+  const twAvgG=avgG(tw), lwAvgG=avgG(lw);
+
+  // Timing
+  const twSD=stdDev(tw.map(localH)), lwSD=stdDev(lw.map(localH));
+  const twHourBuckets=new Array(24).fill(0); tw.forEach(o=>twHourBuckets[localH(o)]++);
+  const peakH=twHourBuckets.indexOf(Math.max(...twHourBuckets));
+
+  // Top products this week
+  const pMap={};
+  tw.forEach(o=>(o.ordre_linjer||[]).forEach(l=>{pMap[l.navn]=(pMap[l.navn]||0)+(l.antal||1)}));
+  const topProds=Object.entries(pMap).sort((a,b)=>b[1]-a[1]).slice(0,3);
+
+  // Tables
+  const twTables=new Set(tw.map(o=>o.bord)).size;
+  const lwTables=new Set(lw.map(o=>o.bord)).size;
+
+  // Active days
+  const twDays=[...new Set(tw.map(dayKey))].length;
+  const lwDays=[...new Set(lw.map(dayKey))].length;
+
+  // Day names
+  const DAGE=['søndag','mandag','tirsdag','onsdag','torsdag','fredag','lørdag'];
+  const weekDayName=DAGE[new Date(thisMonStr+'T12:00:00Z').getUTCDay()];
+
+  // ── Build paragraphs ──
+  const paras=[];
+
+  // 1. Opening
+  if(!hasLast){
+    paras.push(`Det er den første fulde uge med ordredata, så der er intet at sammenligne med endnu. Herunder er et overblik over ugen fra ${bold(weekDayName)} til i dag.`);
+  } else {
+    if(revChg===null) paras.push(`Der er ingen omsætning at sammenligne med fra ugen før.`);
+    else if(revChg>=10) paras.push(`Det har været en ${bold('stærk uge')} — omsætningen er steget med ${bold(fmtPct(revChg))} sammenlignet med ugen før.`);
+    else if(revChg>0) paras.push(`Ugen har vist en ${bold('lille fremgang')} på ${fmtPct(revChg)} i omsætning i forhold til ugen før.`);
+    else if(revChg>=-5) paras.push(`Ugen har forløbet ${bold('nogenlunde stabilt')} med en marginal nedgang på ${Math.abs(revChg)}% i omsætning.`);
+    else paras.push(`Denne uge har ${bold('omsætningen ligget lavere')} end ugen før — et fald på ${bold(Math.abs(revChg)+'%')}.`);
+  }
+
+  // 2. Financial summary
+  const financeLine=hasLast
+    ?`Omsætning: ${bold(euro(twRev))} (mod ${euro(lwRev)} ugen før) · Ordrer: ${bold(twCount)} (mod ${lwCount}) · Snit pr. ordre: ${bold(euro(twAOV))} (mod ${euro(lwAOV)})`
+    :`Omsætning: ${bold(euro(twRev))} · Ordrer: ${bold(twCount)} · Snit pr. ordre: ${bold(euro(twAOV))}`;
+  paras.push(financeLine);
+
+  // 3. Orders vs revenue divergence
+  if(hasLast&&cntChg!==null&&aovChg!==null){
+    if(cntChg>10&&aovChg<-8) paras.push(`Bemærk at der er kommet ${bold('flere ordrer end ugen før')} (${fmtPct(cntChg)}), men at den gennemsnitlige ordre er faldet med ${bold(Math.abs(aovChg)+'%')}. Det tyder på kortere besøg eller at gæsterne har valgt de billigere retter.`);
+    else if(cntChg<-10&&aovChg>8) paras.push(`Selvom der kom ${bold('færre gæster')} end ugen før (${fmtPct(cntChg)}), brugte de til gengæld ${bold('mere per besøg')} (+${aovChg}% i snit pr. ordre) — færre men mere gavmilde gæster.`);
+    else if(cntChg>10&&aovChg>8) paras.push(`En ${bold('dobbelt positiv')} uge: både flere gæster og større ordrer end ugen før.`);
+    else if(cntChg<-10&&aovChg<-8) paras.push(`Dobbelt pres denne uge — både ${bold('færre ordrer og lavere snit')} pr. ordre end ugen før.`);
+  }
+
+  // 4. Guest/seating behavior
+  if(twAvgG>0){
+    if(hasLast&&lwAvgG>0){
+      const gDiff=twAvgG-lwAvgG;
+      if(gDiff>0.4) paras.push(`Gæsterne er kommet i ${bold('større selskaber')} denne uge — i snit ${bold(twAvgG.toFixed(1))} personer pr. bord mod ${lwAvgG.toFixed(1)} ugen før. Det giver typisk højere omsætning per dækning.`);
+      else if(gDiff<-0.4) paras.push(`Gæsterne er kommet i ${bold('mindre grupper')} end ugen før — snit ${bold(twAvgG.toFixed(1))} mod ${lwAvgG.toFixed(1)} pr. bord.`);
+      else paras.push(`Selskabsstørrelsen er stabil på ${bold(twAvgG.toFixed(1)+' pers./bord')} (uændret fra ugen før).`);
+    } else {
+      paras.push(`Gæsterne har i snit siddet ${bold(twAvgG.toFixed(1)+' personer')} pr. bord.`);
+    }
+  }
+
+  // 5. Timing pattern
+  if(tw.length>=4){
+    if(hasLast&&lw.length>=4){
+      if(twSD>lwSD+0.8) paras.push(`Gæsterne er ankommet på ${bold('mere uregelmæssige tidspunkter')} end ugen før (spredning ${twSD.toFixed(1)}t mod ${lwSD.toFixed(1)}t) — det kan gøre det svært at planlægge bemanding og mise-en-place.`);
+      else if(lwSD>twSD+0.8) paras.push(`Gæsterne har vist et ${bold('mere forudsigeligt mønster')} end ugen før (spredning ${twSD.toFixed(1)}t mod ${lwSD.toFixed(1)}t) — nemmere at planlægge efter.`);
+    }
+    if(twHourBuckets[peakH]>0) paras.push(`Travleste tidspunkt denne uge har været ${bold('kl. '+String(peakH).padStart(2,'0')+':00–'+String(peakH+1).padStart(2,'0')+':00')} med ${twHourBuckets[peakH]} ordrer.`);
+  }
+
+  // 6. Table utilization
+  if(hasLast&&twTables!==lwTables){
+    if(twTables>lwTables) paras.push(`Aktiviteten har spredt sig over ${bold(twTables+' borde')} denne uge mod ${lwTables} ugen før — restauranten har haft en bredere bordutnyttelse.`);
+    else paras.push(`Aktiviteten har været koncentreret på ${bold(twTables+' borde')} (ned fra ${lwTables} ugen før).`);
+  }
+
+  // 7. Top products
+  if(topProds.length){
+    const prodStr=topProds.map(([n,c])=>`${bold(n)} (${c} stk.)`).join(', ');
+    paras.push(`Mest bestilte retter denne uge: ${prodStr}.`);
+  }
+
+  // 8. Days active + pace
+  const ordersPerDay=twDays>0?Math.round(twCount/twDays):twCount;
+  if(hasLast){
+    const lwOrdersPerDay=lwDays>0?Math.round(lwCount/lwDays):lwCount;
+    paras.push(`Der har været ordrer på ${bold(twDays+' ud af '+daysElapsed+' dage')} hidtil denne uge — ${bold(ordersPerDay+' ordrer pr. dag')} (mod ${lwOrdersPerDay} ugen før).`);
+  } else {
+    paras.push(`Der har været ordrer på ${bold(twDays+' ud af '+daysElapsed+' dage')} — et snit på ${bold(ordersPerDay+' ordrer pr. dag')}.`);
+  }
+
+  el.innerHTML=paras.map(p=>`<p class="uge-analyse-p">${p}</p>`).join('');
+}
+
 function hapTargetEdit(key){
   const cur=parseFloat(localStorage.getItem(key))||'';
   const val=prompt('Target mujor (€):',cur);
@@ -2384,6 +2541,8 @@ async function renderAnalitika(){
   if(stafiSort.length>1) reks.push(`👥 <strong>${stafiSort[0].navn}</strong> ka xhirën kryesore (${euro(stafiSort[0].xhiro)}), <strong>${stafiSort[stafiSort.length-1].navn}</strong> ka potencial rritjeje.`);
   const rekEl=document.getElementById('anal-rek-wrap');
   if(rekEl) rekEl.innerHTML=!reks.length?ingen:reks.map(r=>`<div class="anal-rek-item">${r}</div>`).join('');
+
+  renderUgensAnalyse();
 }
 
 // =============================================

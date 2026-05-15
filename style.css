@@ -1518,6 +1518,9 @@ body{
 .target-pace{font-size:.85rem;font-weight:700;padding:9px 13px;border-radius:10px}
 .target-pace-ahead{background:rgba(39,174,96,.12);color:#1e8449}
 .target-pace-behind{background:rgba(231,76,60,.1);color:#c0392b}
+.uge-analyse-p{font-size:.9rem;color:var(--tekst);line-height:1.75;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--bg2)}
+.uge-analyse-p:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none}
+.uge-analyse-p strong{color:var(--tekst);font-weight:700}
 
 /* ─── SCROLLBAR ──────────────────────────────────── */
 ::-webkit-scrollbar{width:5px;height:5px}
