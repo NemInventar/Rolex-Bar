@@ -2224,9 +2224,15 @@ async function renderAnalitika(){
     else cumActual.push(null);
   }
   const totalSoFar=cumActual[todayDay-1]||0;
-  const avgDaily=todayDay>0?totalSoFar/todayDay:0;
-  const forecastLine=Array.from({length:daysInMonth},(_,i)=>parseFloat((avgDaily*(i+1)).toFixed(2)));
-  const projectedTotal=forecastLine[daysInMonth-1];
+  const dataStartDay=monthOrders.length>0?Math.min(...monthOrders.map(o=>new Date(new Date(o.oprettet).getTime()+2*3600000).getUTCDate())):todayDay;
+  const activeDays=Math.max(1,todayDay-dataStartDay+1);
+  const avgDaily=totalSoFar/activeDays;
+  // forecast line: null for past days, projects forward from today's cumulative
+  const forecastLine=Array.from({length:daysInMonth},(_,i)=>{
+    if(i<todayDay-1) return null;
+    return parseFloat((totalSoFar+avgDaily*(i-todayDay+1)).toFixed(2));
+  });
+  const projectedTotal=forecastLine[daysInMonth-1]??totalSoFar;
   const fMuaj=document.getElementById('anal-forecast-muaj');
   if(fMuaj) fMuaj.textContent=`${MUAJT_SQ[mo]} ${yr}`;
   const fEl=document.getElementById('anal-forecast-wrap');
@@ -2245,7 +2251,7 @@ async function renderAnalitika(){
         scales:{y:{beginAtZero:true,ticks:{callback:v=>Math.round(v)+' €'}}}}
     });
     const fInsight=document.getElementById('anal-forecast-insight');
-    if(fInsight){fInsight.style.display='';fInsight.innerHTML=`Tempo: <strong>${euro(avgDaily)}/ditë</strong> · Parashikim i muajit: <strong>${euro(projectedTotal)}</strong> · Realizuar deri tani: <strong>${euro(totalSoFar)}</strong>`}
+    if(fInsight){fInsight.style.display='';fInsight.innerHTML=`Tempo: <strong>${euro(avgDaily)}/ditë</strong> (nga ${dataStartDay} ${MUAJT_SQ[mo]}) · Parashikim i muajit: <strong>${euro(projectedTotal)}</strong> · Realizuar deri tani: <strong>${euro(totalSoFar)}</strong>`}
   }
 
   const ingen='<div class="ps-loading">Nuk ka të dhëna për periudhën e zgjedhur</div>';
