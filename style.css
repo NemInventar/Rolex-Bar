@@ -936,6 +936,9 @@ body{
 .ht-arkivo-btn:hover{background:#D97706;color:#fff}
 .ht-status.arkivuar{background:#FEF3C7;color:#92400E}
 .eksport-btn.arkiv-aktiv{background:var(--brun)!important;color:#fff!important}
+.ht-grup{background:#FFFBEB}
+.ht-grup:hover{background:#FEF3C7}
+.ht-runde-badge{display:inline-block;font-size:.68rem;font-weight:800;background:var(--guld);color:#fff;padding:1px 7px;border-radius:99px;margin-left:5px;vertical-align:middle}
 
 /* ─── PRODUKTET ──────────────────────────────────── */
 #produkter-side{flex-direction:column;padding:20px;gap:14px;overflow-y:auto}

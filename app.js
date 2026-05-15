@@ -1991,21 +1991,95 @@ async function opdaterHistorik(){
   }));
 
   if(!vis.length){liste.innerHTML='<div class="ingen-data" style="padding:30px">Nuk ka porosi me këto filtra</div>';return}
-  liste.innerHTML=vis.map(o=>{
-    const sc=o.status==='betalt'?'paguar':o.status==='afvist'?'refuzuar':'arkivuar';
-    const sl=o.status==='betalt'?'Paguar':o.status==='afvist'?'Refuzuar':'Arkivuar';
-    return `<div class="ht-raekke" onclick='hapFature(${JSON.stringify(o)})'>
-    <div>#${o.ordre_nummer}</div>
-    <div>${formatData(o.oprettet)}</div>
-    <div>${euro(o.total)}</div>
-    <div>${o.betaling==='kontant'?'Kesh':o.betaling==='kort'?'Kartë':o.betaling||'–'}</div>
-    <div><span class="ht-status ${sc}">${sl}</span></div>
-    <div style="display:flex;gap:3px;align-items:center">
-      <button class="ht-print-btn" onclick="event.stopPropagation();hapFature(${JSON.stringify(o).replace(/'/g,'&#39;')})">🖨 Printo</button>
-      ${erAdmin&&!_histArkivMod?`<button class="ht-arkivo-btn" onclick="event.stopPropagation();arkivoOrdren('${o.id}')">📦</button>`:''}
-    </div>
-  </div>`;
+
+  // Group orders paid at the same time on the same table (multi-round sessions)
+  const gruper={};
+  vis.forEach(o=>{
+    const key=(o.betalt&&o.bord&&o.bord!=='–')?`${o.betalt}|${o.bord}`:o.id;
+    if(!gruper[key]) gruper[key]=[];
+    gruper[key].push(o);
+  });
+  const grupetList=Object.values(gruper).sort((a,b)=>new Date(b[0].oprettet)-new Date(a[0].oprettet));
+
+  window._histGruper={};
+  let gIdx=0;
+
+  liste.innerHTML=grupetList.map(grup=>{
+    const multi=grup.length>1;
+    if(!multi){
+      const o=grup[0];
+      const sc=o.status==='betalt'?'paguar':o.status==='afvist'?'refuzuar':'arkivuar';
+      const sl=o.status==='betalt'?'Paguar':o.status==='afvist'?'Refuzuar':'Arkivuar';
+      return `<div class="ht-raekke" onclick='hapFature(${JSON.stringify(o)})'>
+      <div>#${o.ordre_nummer}</div>
+      <div>${formatData(o.oprettet)}</div>
+      <div>${euro(o.total)}</div>
+      <div>${o.betaling==='kontant'?'Kesh':o.betaling==='kort'?'Kartë':o.betaling||'–'}</div>
+      <div><span class="ht-status ${sc}">${sl}</span></div>
+      <div style="display:flex;gap:3px;align-items:center">
+        <button class="ht-print-btn" onclick="event.stopPropagation();hapFature(${JSON.stringify(o).replace(/'/g,'&#39;')})">🖨 Printo</button>
+        ${erAdmin&&!_histArkivMod?`<button class="ht-arkivo-btn" onclick="event.stopPropagation();arkivoOrdren('${o.id}')">📦</button>`:''}
+      </div>
+    </div>`;
+    } else {
+      const key='g'+(gIdx++);
+      window._histGruper[key]=grup;
+      const total=parseFloat(grup.reduce((s,o)=>s+parseFloat(o.total),0).toFixed(2));
+      const oldest=grup[grup.length-1];
+      return `<div class="ht-raekke ht-grup" onclick='hapFatureGrup("${key}")'>
+      <div>🍽️ ${oldest.bord} <span class="ht-runde-badge">${grup.length} runde</span></div>
+      <div>${formatData(oldest.oprettet)}</div>
+      <div>${euro(total)}</div>
+      <div>Kesh</div>
+      <div><span class="ht-status paguar">Paguar</span></div>
+      <div style="display:flex;gap:3px;align-items:center">
+        <button class="ht-print-btn" onclick="event.stopPropagation();hapFatureGrup('${key}')">🖨 Printo</button>
+        ${erAdmin&&!_histArkivMod?`<button class="ht-arkivo-btn" onclick="event.stopPropagation();arkivoGrupin('${key}')">📦</button>`:''}
+      </div>
+    </div>`;
+    }
   }).join('');
+}
+
+function hapFatureGrup(key){
+  const grup=window._histGruper[key];
+  if(!grup) return;
+  const ordrerList=grup.slice().reverse(); // oldest first
+  const total=parseFloat(ordrerList.reduce((s,o)=>s+parseFloat(o.total),0).toFixed(2));
+  const kusuri=ordrerList[ordrerList.length-1].kusuri||0;
+  const bord=ordrerList[0].bord;
+  const d=new Date(ordrerList[ordrerList.length-1].betalt||ordrerList[ordrerList.length-1].oprettet);
+  const ds=d.toLocaleDateString('sq-AL')+' '+d.toLocaleTimeString('sq-AL',{hour:'2-digit',minute:'2-digit'});
+  const S='================================';
+  let t=`        ARTIZANO\n     Eat & More\n${S}\n`;
+  t+=`Data: ${ds}\nTavolina: ${bord}\n${S}\n`;
+  ordrerList.forEach((o,i)=>{
+    const oKoha=new Date(o.oprettet).toLocaleTimeString('sq-AL',{hour:'2-digit',minute:'2-digit'});
+    t+=`Porosi #${o.ordre_nummer} — ${oKoha}\n`;
+    o.items.forEach(it=>{const nm=(it.antal+'× '+it.produkt_navn).slice(0,22);const pr=euro(it.produkt_pris*it.antal);t+=nm.padEnd(32-pr.length,' ')+pr+'\n'});
+    if(i<ordrerList.length-1) t+=`--------------------------------\n`;
+  });
+  const totStr=euro(total);
+  t+=`${S}\n${'TOTALI'.padEnd(32-totStr.length,' ')}${totStr}\nPaguar me: Kesh\n`;
+  if(kusuri>0.001) t+=`Kusuri: ${euro(kusuri)}\n`;
+  t+=`${S}\n   Ju faleminderit! 🙏\n   Mirë se vini sërish`;
+  aktivFatureOrdre={
+    id:'kombinuar',ordre_nummer:'GJITHË',status:'betalt',
+    bord,betaling:'kontant',total,kusuri,
+    oprettet:ordrerList[0].oprettet,betalt:ordrerList[ordrerList.length-1].betalt,
+    items:ordrerList.flatMap(o=>o.items)
+  };
+  document.getElementById('kvit-indhold').textContent=t;
+  document.getElementById('kvittering-modal').classList.add('vis');
+}
+
+async function arkivoGrupin(key){
+  if(!erAdmin){hapLoginModalNormal();visToast('🔒 Keni nevojë për login Admin!','gabim');return}
+  const ids=(window._histGruper[key]||[]).map(o=>o.id);
+  if(!ids.length) return;
+  await sb.from('ordrer').update({status:'arkiveret'}).in('id',ids);
+  opdaterHistorik();
+  visToast(`${ids.length} porosi u arkivuan ✓`);
 }
 
 // =============================================
