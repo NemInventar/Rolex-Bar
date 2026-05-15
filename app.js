@@ -78,6 +78,7 @@ function konfirmoPin(){
       erAdmin=true;
       aktivBruger={id:'_admin',navn:'Admin',rolle:'admin'};
       mbyllModal('login-modal');
+      mbyllModal('bruger-picker-modal');
       visToast('Mirë se vini, Admin! 🔓');
       updateBrugerBadge();
       if(_pendingTab){const t=_pendingTab;_pendingTab=null;skiftTab(t);}
@@ -501,6 +502,7 @@ function _localIso(dateStr,time){return new Date(dateStr+'T'+time).toISOString()
 function unikID(){return 'id_'+Date.now()+'_'+Math.random().toString(36).slice(2,7)}
 function visToast(msg,tip='ok'){const t=document.getElementById('toast');t.textContent=msg;t.style.background=tip==='gabim'?'#C0392B':tip==='info'?'#2980B9':'#3B1F0E';t.classList.add('vis');setTimeout(()=>t.classList.remove('vis'),3000)}
 function mbyllModal(id){document.getElementById(id).classList.remove('vis')}
+function mbyllLoginModal(){mbyllModal('login-modal');if(!aktivBruger&&!erAdmin)hapBrugerPicker();}
 
 // =============================================
 // TABS
@@ -2568,6 +2570,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderTablePicker();
   genindlaesVentende();
   opdaterAabneBadge();
+  if(!aktivBruger&&!erAdmin) hapBrugerPicker();
   document.getElementById('periode-dato').value=sotDita();
   opdaterUr();
   setInterval(opdaterUr,1000);
@@ -2600,7 +2603,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if(e.key>='0'&&e.key<='9'){e.preventDefault();pinShto(e.key)}
     else if(e.key==='Backspace'){e.preventDefault();pinFshi()}
     else if(e.key==='Delete'){e.preventDefault();pinReset()}
-    else if(e.key==='Escape'){e.preventDefault();mbyllModal('login-modal')}
+    else if(e.key==='Escape'){e.preventDefault();mbyllLoginModal()}
   });
 
   // Keyboard support for cash modal
