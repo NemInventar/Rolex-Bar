@@ -102,6 +102,7 @@
           <button class="periode-btn" onclick="skiftPeriode('maaned',this)">Muaj</button>
           <input type="date" class="dato-felt" id="periode-dato" onchange="opdaterOmsaetning()">
         </div>
+        <button class="eksport-btn" onclick="opdaterOmsaetning();renderKassaKontroll()">↻</button>
         <button class="eksport-btn" onclick="eksporterCSV()">⬇ CSV</button>
       </div>
     </div>
@@ -250,6 +251,17 @@
         <input type="date" id="anal-til">
         <button class="anal-refresh-btn" onclick="renderAnalitika()">↻ Ngarko</button>
       </div>
+    </div>
+
+    <div class="anal-boks">
+      <h3 class="anal-titull">📊 Statistika gjithë kohët</h3>
+      <div id="anal-kpi-wrap"><div class="ps-loading">Duke ngarkuar...</div></div>
+    </div>
+
+    <div class="anal-boks">
+      <h3 class="anal-titull">📈 Parashikimi i xhiros — <span id="anal-forecast-muaj"></span></h3>
+      <div id="anal-forecast-wrap"><div class="ps-loading">Duke ngarkuar...</div></div>
+      <div class="anal-insight" id="anal-forecast-insight" style="display:none"></div>
     </div>
 
     <div class="anal-boks">

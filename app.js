@@ -2175,23 +2175,81 @@ function opdaterUr(){
 // =============================================
 // ANALITIKA
 // =============================================
-let analChart=null;
+let analChart=null, analForecastChart=null;
+const MUAJT_SQ=['Janar','Shkurt','Mars','Prill','Maj','Qershor','Korrik','Gusht','Shtator','Tetor','Nëntor','Dhjetor'];
 
 async function renderAnalitika(){
   if(!erAdmin) return;
   const fra=document.getElementById('anal-fra').value;
   const til=document.getElementById('anal-til').value;
-  const ids=['anal-orare','anal-produkt','anal-tavolina','anal-stafi','anal-bashke','anal-rek'];
-  ids.forEach(id=>{const el=document.getElementById(id+'-wrap');if(el)el.innerHTML='<div class="ps-loading">Duke ngarkuar...</div>'});
+  const filteredIds=['anal-orare','anal-produkt','anal-tavolina','anal-stafi','anal-bashke','anal-rek'];
+  [...filteredIds,'anal-kpi','anal-forecast'].forEach(id=>{const el=document.getElementById(id+'-wrap');if(el)el.innerHTML='<div class="ps-loading">Duke ngarkuar...</div>'});
 
   let q=sb.from('ordrer')
     .select('id,bord,total,betaling,oprettet,bruger_id,bruger_navn,antal_guests,ordre_linjer(navn,pris,antal)')
     .eq('restaurant_id',RESTAURANT_ID).eq('status','betalt');
   if(fra) q=q.gte('oprettet',_localIso(fra,'00:00:00'));
   if(til) q=q.lte('oprettet',_localIso(til,'23:59:59'));
-  const {data,error}=await q;
+  const alltimeQ=sb.from('ordrer').select('total,oprettet').eq('restaurant_id',RESTAURANT_ID).eq('status','betalt');
+  const [{data,error},{data:atData}]=await Promise.all([q,alltimeQ]);
+
+  // ── AOV + all-time KPIs ──
+  const atOrders=atData||[];
+  const atTotal=atOrders.reduce((s,o)=>s+parseFloat(o.total||0),0);
+  const atCount=atOrders.length;
+  const aov=atCount>0?atTotal/atCount:0;
+  const kpiEl=document.getElementById('anal-kpi-wrap');
+  if(kpiEl) kpiEl.innerHTML=`<div class="anal-kpi-grid">
+    <div class="anal-kpi"><div class="anal-kpi-val">${euro(aov)}</div><div class="anal-kpi-lbl">Vlera mesatare / porosi</div></div>
+    <div class="anal-kpi"><div class="anal-kpi-val">${atCount.toLocaleString('sq-AL')}</div><div class="anal-kpi-lbl">Porosi gjithsej</div></div>
+    <div class="anal-kpi"><div class="anal-kpi-val">${euro(atTotal)}</div><div class="anal-kpi-lbl">Xhiro gjithsej</div></div>
+  </div>`;
+
+  // ── Revenue forecast (always current month) ──
+  const now=new Date();
+  const yr=now.getFullYear(),mo=now.getMonth();
+  const daysInMonth=new Date(yr,mo+1,0).getDate();
+  const todayDay=now.getDate();
+  const mStart=new Date(yr,mo,1),mEnd=new Date(yr,mo+1,0,23,59,59);
+  const monthOrders=atOrders.filter(o=>{const d=new Date(o.oprettet);return d>=mStart&&d<=mEnd});
+  const dailyRev=new Array(daysInMonth).fill(0);
+  monthOrders.forEach(o=>{
+    const local=new Date(new Date(o.oprettet).getTime()+2*3600000);
+    const day=local.getUTCDate()-1;
+    if(day>=0&&day<daysInMonth) dailyRev[day]+=parseFloat(o.total)||0;
+  });
+  const cumActual=[];let running=0;
+  for(let i=0;i<daysInMonth;i++){
+    if(i<todayDay){running+=dailyRev[i];cumActual.push(parseFloat(running.toFixed(2)))}
+    else cumActual.push(null);
+  }
+  const totalSoFar=cumActual[todayDay-1]||0;
+  const avgDaily=todayDay>0?totalSoFar/todayDay:0;
+  const forecastLine=Array.from({length:daysInMonth},(_,i)=>parseFloat((avgDaily*(i+1)).toFixed(2)));
+  const projectedTotal=forecastLine[daysInMonth-1];
+  const fMuaj=document.getElementById('anal-forecast-muaj');
+  if(fMuaj) fMuaj.textContent=`${MUAJT_SQ[mo]} ${yr}`;
+  const fEl=document.getElementById('anal-forecast-wrap');
+  if(fEl){
+    fEl.innerHTML='<canvas id="anal-forecast-chart" style="max-height:260px"></canvas>';
+    if(analForecastChart) analForecastChart.destroy();
+    analForecastChart=new Chart(document.getElementById('anal-forecast-chart').getContext('2d'),{
+      type:'line',
+      data:{labels:Array.from({length:daysInMonth},(_,i)=>String(i+1)),
+        datasets:[
+          {label:'Realizuar',data:cumActual,borderColor:'#27AE60',backgroundColor:'rgba(39,174,96,.1)',borderWidth:2.5,pointRadius:2,tension:0.3,fill:true,spanGaps:false},
+          {label:'Parashikuar',data:forecastLine,borderColor:'#C9963B',borderWidth:2,borderDash:[6,4],pointRadius:0,tension:0,fill:false}
+        ]},
+      options:{responsive:true,
+        plugins:{legend:{display:true,position:'top'},tooltip:{callbacks:{label:c=>c.dataset.label+': '+euro(c.raw||0)}}},
+        scales:{y:{beginAtZero:true,ticks:{callback:v=>Math.round(v)+' €'}}}}
+    });
+    const fInsight=document.getElementById('anal-forecast-insight');
+    if(fInsight){fInsight.style.display='';fInsight.innerHTML=`Tempo: <strong>${euro(avgDaily)}/ditë</strong> · Parashikim i muajit: <strong>${euro(projectedTotal)}</strong> · Realizuar deri tani: <strong>${euro(totalSoFar)}</strong>`}
+  }
+
   const ingen='<div class="ps-loading">Nuk ka të dhëna për periudhën e zgjedhur</div>';
-  if(error||!data?.length){ids.forEach(id=>{const el=document.getElementById(id+'-wrap');if(el)el.innerHTML=ingen});return}
+  if(error||!data?.length){filteredIds.forEach(id=>{const el=document.getElementById(id+'-wrap');if(el)el.innerHTML=ingen});return}
   const dr=data;
 
   // 1. Peak hours
