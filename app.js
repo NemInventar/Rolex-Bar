@@ -248,6 +248,7 @@ function logoutBruger(){
 }
 
 function toggleArkivMod(el){
+  if(!erAdmin){hapLoginModalNormal();visToast('🔒 Keni nevojë për login Admin!','gabim');return}
   _histArkivMod=!_histArkivMod;
   el.textContent=_histArkivMod?'📋 Historiku':'📦 Arkivi';
   el.classList.toggle('arkiv-aktiv',_histArkivMod);
@@ -2216,7 +2217,7 @@ async function renderUgensAnalyse(){
   const hasLast=lw.length>0;
 
   if(!tw.length&&!lw.length){
-    el.innerHTML='<div class="anal-insight">Ingen ordredata endnu — analysen vises når de første ordrer er registreret.</div>';
+    el.innerHTML='<div class="anal-insight">Nuk ka të dhëna porosish — analiza do të shfaqet sapo të regjistrohen porositë e para.</div>';
     return;
   }
 
@@ -2259,77 +2260,77 @@ async function renderUgensAnalyse(){
   const lwDays=[...new Set(lw.map(dayKey))].length;
 
   // Day names
-  const DAGE=['søndag','mandag','tirsdag','onsdag','torsdag','fredag','lørdag'];
-  const weekDayName=DAGE[new Date(thisMonStr+'T12:00:00Z').getUTCDay()];
+  const DITE_SQ=['e diel','e hënë','e martë','e mërkurë','e enjte','e premte','e shtunë'];
+  const weekDayName=DITE_SQ[new Date(thisMonStr+'T12:00:00Z').getUTCDay()];
 
   // ── Build paragraphs ──
   const paras=[];
 
   // 1. Opening
   if(!hasLast){
-    paras.push(`Det er den første fulde uge med ordredata, så der er intet at sammenligne med endnu. Herunder er et overblik over ugen fra ${bold(weekDayName)} til i dag.`);
+    paras.push(`Kjo është java e parë me të dhëna porosish — ende nuk ka asgjë për krahasim. Më poshtë është një përmbledhje e javës nga ${bold(weekDayName)} deri sot.`);
   } else {
-    if(revChg===null) paras.push(`Der er ingen omsætning at sammenligne med fra ugen før.`);
-    else if(revChg>=10) paras.push(`Det har været en ${bold('stærk uge')} — omsætningen er steget med ${bold(fmtPct(revChg))} sammenlignet med ugen før.`);
-    else if(revChg>0) paras.push(`Ugen har vist en ${bold('lille fremgang')} på ${fmtPct(revChg)} i omsætning i forhold til ugen før.`);
-    else if(revChg>=-5) paras.push(`Ugen har forløbet ${bold('nogenlunde stabilt')} med en marginal nedgang på ${Math.abs(revChg)}% i omsætning.`);
-    else paras.push(`Denne uge har ${bold('omsætningen ligget lavere')} end ugen før — et fald på ${bold(Math.abs(revChg)+'%')}.`);
+    if(revChg===null) paras.push(`Nuk ka xhiro për të krahasuar nga java e kaluar.`);
+    else if(revChg>=10) paras.push(`Ka qenë një ${bold('javë e fortë')} — xhiroja ka shënuar rritje prej ${bold(fmtPct(revChg))} krahasuar me javën e kaluar.`);
+    else if(revChg>0) paras.push(`Java ka treguar ${bold('rritje të lehtë')} prej ${fmtPct(revChg)} në xhiro krahasuar me javën e kaluar.`);
+    else if(revChg>=-5) paras.push(`Java ka ecur ${bold('relativisht qëndrueshëm')} me një rënie minimale prej ${Math.abs(revChg)}% në xhiro.`);
+    else paras.push(`Këtë javë ${bold('xhiroja ka qenë më e ulët')} se java e kaluar — rënie prej ${bold(Math.abs(revChg)+'%')}.`);
   }
 
   // 2. Financial summary
   const financeLine=hasLast
-    ?`Omsætning: ${bold(euro(twRev))} (mod ${euro(lwRev)} ugen før) · Ordrer: ${bold(twCount)} (mod ${lwCount}) · Snit pr. ordre: ${bold(euro(twAOV))} (mod ${euro(lwAOV)})`
-    :`Omsætning: ${bold(euro(twRev))} · Ordrer: ${bold(twCount)} · Snit pr. ordre: ${bold(euro(twAOV))}`;
+    ?`Xhiro: ${bold(euro(twRev))} (kundrejt ${euro(lwRev)} javën e kaluar) · Porosi: ${bold(twCount)} (kundrejt ${lwCount}) · Mesatare/porosi: ${bold(euro(twAOV))} (kundrejt ${euro(lwAOV)})`
+    :`Xhiro: ${bold(euro(twRev))} · Porosi: ${bold(twCount)} · Mesatare/porosi: ${bold(euro(twAOV))}`;
   paras.push(financeLine);
 
   // 3. Orders vs revenue divergence
   if(hasLast&&cntChg!==null&&aovChg!==null){
-    if(cntChg>10&&aovChg<-8) paras.push(`Bemærk at der er kommet ${bold('flere ordrer end ugen før')} (${fmtPct(cntChg)}), men at den gennemsnitlige ordre er faldet med ${bold(Math.abs(aovChg)+'%')}. Det tyder på kortere besøg eller at gæsterne har valgt de billigere retter.`);
-    else if(cntChg<-10&&aovChg>8) paras.push(`Selvom der kom ${bold('færre gæster')} end ugen før (${fmtPct(cntChg)}), brugte de til gengæld ${bold('mere per besøg')} (+${aovChg}% i snit pr. ordre) — færre men mere gavmilde gæster.`);
-    else if(cntChg>10&&aovChg>8) paras.push(`En ${bold('dobbelt positiv')} uge: både flere gæster og større ordrer end ugen før.`);
-    else if(cntChg<-10&&aovChg<-8) paras.push(`Dobbelt pres denne uge — både ${bold('færre ordrer og lavere snit')} pr. ordre end ugen før.`);
+    if(cntChg>10&&aovChg<-8) paras.push(`Vërehet se kanë ardhur ${bold('më shumë porosi se javën e kaluar')} (${fmtPct(cntChg)}), por porosia mesatare ka rënë me ${bold(Math.abs(aovChg)+'%')}. Kjo mund të tregojë vizita më të shkurtra ose zgjedhje të artikujve më të lirë.`);
+    else if(cntChg<-10&&aovChg>8) paras.push(`Edhe pse kanë ardhur ${bold('më pak mysafirë')} se javën e kaluar (${fmtPct(cntChg)}), ata kanë shpenzuar ${bold('më shumë për vizitë')} (+${aovChg}% mesatare/porosi) — pak mysafirë, por buxhet më të lartë.`);
+    else if(cntChg>10&&aovChg>8) paras.push(`Javë ${bold('dyfisht pozitive')}: si numër porosish ashtu edhe mesatare/porosi janë rritur krahasuar me javën e kaluar.`);
+    else if(cntChg<-10&&aovChg<-8) paras.push(`Javë me presion të dyfishtë — ${bold('si porosi më pak ashtu edhe mesatare më e ulët')} se javën e kaluar.`);
   }
 
   // 4. Guest/seating behavior
   if(twAvgG>0){
     if(hasLast&&lwAvgG>0){
       const gDiff=twAvgG-lwAvgG;
-      if(gDiff>0.4) paras.push(`Gæsterne er kommet i ${bold('større selskaber')} denne uge — i snit ${bold(twAvgG.toFixed(1))} personer pr. bord mod ${lwAvgG.toFixed(1)} ugen før. Det giver typisk højere omsætning per dækning.`);
-      else if(gDiff<-0.4) paras.push(`Gæsterne er kommet i ${bold('mindre grupper')} end ugen før — snit ${bold(twAvgG.toFixed(1))} mod ${lwAvgG.toFixed(1)} pr. bord.`);
-      else paras.push(`Selskabsstørrelsen er stabil på ${bold(twAvgG.toFixed(1)+' pers./bord')} (uændret fra ugen før).`);
+      if(gDiff>0.4) paras.push(`Mysafirët kanë ardhur në ${bold('grupe më të mëdha')} këtë javë — mesatarisht ${bold(twAvgG.toFixed(1))} persona për tavolinë kundrejt ${lwAvgG.toFixed(1)} javën e kaluar. Grupe më të mëdha zakonisht sjellin xhiro më të lartë për tavolinë.`);
+      else if(gDiff<-0.4) paras.push(`Mysafirët kanë ardhur në ${bold('grupe më të vogla')} se javën e kaluar — mesatare ${bold(twAvgG.toFixed(1))} kundrejt ${lwAvgG.toFixed(1)} për tavolinë.`);
+      else paras.push(`Madhësia e grupeve mbetet e qëndrueshme: ${bold(twAvgG.toFixed(1)+' persona/tavolinë')} (e pandryshuar nga java e kaluar).`);
     } else {
-      paras.push(`Gæsterne har i snit siddet ${bold(twAvgG.toFixed(1)+' personer')} pr. bord.`);
+      paras.push(`Mysafirët kanë ulur mesatarisht ${bold(twAvgG.toFixed(1)+' persona')} për tavolinë.`);
     }
   }
 
   // 5. Timing pattern
   if(tw.length>=4){
     if(hasLast&&lw.length>=4){
-      if(twSD>lwSD+0.8) paras.push(`Gæsterne er ankommet på ${bold('mere uregelmæssige tidspunkter')} end ugen før (spredning ${twSD.toFixed(1)}t mod ${lwSD.toFixed(1)}t) — det kan gøre det svært at planlægge bemanding og mise-en-place.`);
-      else if(lwSD>twSD+0.8) paras.push(`Gæsterne har vist et ${bold('mere forudsigeligt mønster')} end ugen før (spredning ${twSD.toFixed(1)}t mod ${lwSD.toFixed(1)}t) — nemmere at planlægge efter.`);
+      if(twSD>lwSD+0.8) paras.push(`Mysafirët kanë ardhur në ${bold('orare më të parregullta')} se javën e kaluar (shpërndarje ${twSD.toFixed(1)}h kundrejt ${lwSD.toFixed(1)}h) — kjo e bën planifikimin e stafit dhe përgatitjen më të vështirë.`);
+      else if(lwSD>twSD+0.8) paras.push(`Mysafirët kanë treguar ${bold('model më të parashikueshëm')} se javën e kaluar (shpërndarje ${twSD.toFixed(1)}h kundrejt ${lwSD.toFixed(1)}h) — më e lehtë për t'u planifikuar.`);
     }
-    if(twHourBuckets[peakH]>0) paras.push(`Travleste tidspunkt denne uge har været ${bold('kl. '+String(peakH).padStart(2,'0')+':00–'+String(peakH+1).padStart(2,'0')+':00')} med ${twHourBuckets[peakH]} ordrer.`);
+    if(twHourBuckets[peakH]>0) paras.push(`Ora më e ngarkuar këtë javë ka qenë ${bold(String(peakH).padStart(2,'0')+':00–'+String(peakH+1).padStart(2,'0')+':00')} me ${twHourBuckets[peakH]} porosi.`);
   }
 
   // 6. Table utilization
   if(hasLast&&twTables!==lwTables){
-    if(twTables>lwTables) paras.push(`Aktiviteten har spredt sig over ${bold(twTables+' borde')} denne uge mod ${lwTables} ugen før — restauranten har haft en bredere bordutnyttelse.`);
-    else paras.push(`Aktiviteten har været koncentreret på ${bold(twTables+' borde')} (ned fra ${lwTables} ugen før).`);
+    if(twTables>lwTables) paras.push(`Aktiviteti është shpërndarë në ${bold(twTables+' tavolina')} këtë javë kundrejt ${lwTables} javën e kaluar — shfrytëzim më i gjerë i tavolinave.`);
+    else paras.push(`Aktiviteti është përqendruar në ${bold(twTables+' tavolina')} (nga ${lwTables} javën e kaluar).`);
   }
 
   // 7. Top products
   if(topProds.length){
-    const prodStr=topProds.map(([n,c])=>`${bold(n)} (${c} stk.)`).join(', ');
-    paras.push(`Mest bestilte retter denne uge: ${prodStr}.`);
+    const prodStr=topProds.map(([n,c])=>`${bold(n)} (${c} cop.)`).join(', ');
+    paras.push(`Artikujt më të porositur këtë javë: ${prodStr}.`);
   }
 
   // 8. Days active + pace
   const ordersPerDay=twDays>0?Math.round(twCount/twDays):twCount;
   if(hasLast){
     const lwOrdersPerDay=lwDays>0?Math.round(lwCount/lwDays):lwCount;
-    paras.push(`Der har været ordrer på ${bold(twDays+' ud af '+daysElapsed+' dage')} hidtil denne uge — ${bold(ordersPerDay+' ordrer pr. dag')} (mod ${lwOrdersPerDay} ugen før).`);
+    paras.push(`Ka pasur porosi në ${bold(twDays+' nga '+daysElapsed+' ditët')} deri tani këtë javë — ${bold(ordersPerDay+' porosi/ditë')} (kundrejt ${lwOrdersPerDay} javën e kaluar).`);
   } else {
-    paras.push(`Der har været ordrer på ${bold(twDays+' ud af '+daysElapsed+' dage')} — et snit på ${bold(ordersPerDay+' ordrer pr. dag')}.`);
+    paras.push(`Ka pasur porosi në ${bold(twDays+' nga '+daysElapsed+' ditët')} — mesatare ${bold(ordersPerDay+' porosi/ditë')}.`);
   }
 
   el.innerHTML=paras.map(p=>`<p class="uge-analyse-p">${p}</p>`).join('');
@@ -2569,6 +2570,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     genindlaesVentende();
     opdaterAabneBadge();
   }, 8000);
+
+  // Keyboard support for PIN modal
+  document.addEventListener('keydown', e=>{
+    if(!document.getElementById('login-modal').classList.contains('vis')) return;
+    if(e.key>='0'&&e.key<='9'){e.preventDefault();pinShto(e.key)}
+    else if(e.key==='Backspace'){e.preventDefault();pinFshi()}
+    else if(e.key==='Delete'){e.preventDefault();pinReset()}
+    else if(e.key==='Escape'){e.preventDefault();mbyllModal('login-modal')}
+  });
 
   // Keyboard support for cash modal
   document.addEventListener('keydown', e=>{
