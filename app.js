@@ -2178,6 +2178,16 @@ function opdaterUr(){
 let analChart=null, analForecastChart=null;
 const MUAJT_SQ=['Janar','Shkurt','Mars','Prill','Maj','Qershor','Korrik','Gusht','Shtator','Tetor','Nëntor','Dhjetor'];
 
+function hapTargetEdit(key){
+  const cur=parseFloat(localStorage.getItem(key))||'';
+  const val=prompt('Target mujor (€):',cur);
+  if(val===null) return;
+  const n=parseFloat(val.replace(',','.'));
+  if(isNaN(n)||n<0) return;
+  localStorage.setItem(key,n);
+  renderAnalitika();
+}
+
 async function renderAnalitika(){
   if(!erAdmin) return;
   const fra=document.getElementById('anal-fra').value;
@@ -2252,6 +2262,39 @@ async function renderAnalitika(){
     });
     const fInsight=document.getElementById('anal-forecast-insight');
     if(fInsight){fInsight.style.display='';fInsight.innerHTML=`Tempo: <strong>${euro(avgDaily)}/ditë</strong> (nga ${dataStartDay} ${MUAJT_SQ[mo]}) · Parashikim i muajit: <strong>${euro(projectedTotal)}</strong> · Realizuar deri tani: <strong>${euro(totalSoFar)}</strong>`}
+  }
+
+  // ── Target panel ──
+  const targetKey=`pizza_target_${yr}_${mo}`;
+  const targetVal=parseFloat(localStorage.getItem(targetKey))||0;
+  const expectedSoFar=targetVal>0?parseFloat((targetVal*todayDay/daysInMonth).toFixed(2)):0;
+  const diff=totalSoFar-expectedSoFar;
+  const pct=targetVal>0?Math.round(totalSoFar/targetVal*100):0;
+  const ahead=diff>=0;
+  const tPanel=document.getElementById('anal-target-panel');
+  if(tPanel){
+    tPanel.innerHTML=`
+      <div class="target-header">
+        <h3 class="anal-titull" style="margin-bottom:0">🎯 Target — ${MUAJT_SQ[mo]} ${yr}</h3>
+        <button class="target-edit-btn" onclick="hapTargetEdit('${targetKey}')">✏️ Ndrysho</button>
+      </div>
+      ${targetVal>0?`
+      <div class="target-amount-row">
+        <span class="target-amount-lbl">Target:</span>
+        <span class="target-amount-val">${euro(targetVal)}</span>
+      </div>
+      <div class="target-prog-bg"><div class="target-prog-bar" style="width:${Math.min(100,pct)}%;background:${ahead?'#27AE60':'#E74C3C'}"></div></div>
+      <div class="target-pct" style="color:${ahead?'#27AE60':'#E74C3C'}">${pct}% af target</div>
+      <div class="target-stats">
+        <div>Realizuar: <strong>${euro(totalSoFar)}</strong></div>
+        <div>Target i muajit: <strong>${euro(targetVal)}</strong></div>
+        <div>Pritet sot (${todayDay}/${daysInMonth}): <strong>${euro(expectedSoFar)}</strong></div>
+      </div>
+      <div class="target-pace ${ahead?'target-pace-ahead':'target-pace-behind'}">
+        ${ahead?'▲':'▼'} ${euro(Math.abs(diff))} ${ahead?'para targetit sot':'prapa targetit sot'}
+      </div>`
+      :`<div class="anal-insight" style="margin-top:12px">Kliko <strong>✏️ Ndrysho</strong> për të vendosur target mujor.</div>`}
+    `;
   }
 
   const ingen='<div class="ps-loading">Nuk ka të dhëna për periudhën e zgjedhur</div>';

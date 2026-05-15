@@ -1500,6 +1500,24 @@ body{
 .anal-insight{margin-top:14px;font-size:.85rem;color:var(--tekst-lys);background:var(--bg2);padding:10px 14px;border-radius:10px;line-height:1.5}
 .anal-rek-item{padding:12px 14px;background:var(--bg2);border-radius:10px;margin-bottom:10px;font-size:.88rem;color:var(--tekst);line-height:1.6}
 .anal-rek-item:last-child{margin-bottom:0}
+.forecast-target-wrap{display:flex;gap:24px;align-items:flex-start}
+.forecast-col{flex:1;min-width:0}
+.target-col{width:230px;flex-shrink:0;border-left:1.5px solid var(--border);padding-left:24px}
+@media(max-width:720px){.forecast-target-wrap{flex-direction:column}.target-col{width:100%;border-left:none;border-top:1.5px solid var(--border);padding-left:0;padding-top:20px;margin-top:4px}}
+.target-header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:16px}
+.target-edit-btn{background:var(--bg2);border:1.5px solid var(--border);border-radius:8px;padding:5px 10px;font-size:.78rem;font-weight:700;color:var(--tekst);cursor:pointer;white-space:nowrap}
+.target-edit-btn:hover{background:var(--border)}
+.target-amount-row{display:flex;align-items:baseline;gap:8px;margin-bottom:12px}
+.target-amount-lbl{font-size:.8rem;color:var(--tekst-lys);font-weight:600}
+.target-amount-val{font-size:1.25rem;font-weight:800;color:var(--tekst)}
+.target-prog-bg{background:var(--bg2);border-radius:8px;height:10px;overflow:hidden;margin-bottom:6px}
+.target-prog-bar{height:100%;border-radius:8px;transition:width .4s ease}
+.target-pct{font-size:1.4rem;font-weight:800;margin-bottom:12px}
+.target-stats{font-size:.8rem;color:var(--tekst-lys);display:flex;flex-direction:column;gap:4px;margin-bottom:14px}
+.target-stats strong{color:var(--tekst)}
+.target-pace{font-size:.85rem;font-weight:700;padding:9px 13px;border-radius:10px}
+.target-pace-ahead{background:rgba(39,174,96,.12);color:#1e8449}
+.target-pace-behind{background:rgba(231,76,60,.1);color:#c0392b}
 
 /* ─── SCROLLBAR ──────────────────────────────────── */
 ::-webkit-scrollbar{width:5px;height:5px}
