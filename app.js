@@ -13,7 +13,7 @@ let pinMod = 'login'; // 'login' | 'pin-ri' | 'pin-konfirmo'
 let pinRiTemp = '';
 let bpPinInput = '', bpZgjedhurBrugerId = null;
 
-function getPinKod(){ return localStorage.getItem('artizano_pin')||'88888888'; }
+function getPinKod(){ return localStorage.getItem('rolex_bar_pin')||'88888888'; }
 
 // =============================================
 // ADMIN / PIN
@@ -99,7 +99,7 @@ function konfirmoPin(){
   }
   if(pinMod==='pin-konfirmo'){
     if(pinInput===pinRiTemp){
-      localStorage.setItem('artizano_pin',pinInput);
+      localStorage.setItem('rolex_bar_pin',pinInput);
       mbyllModal('login-modal');
       visToast('✓ Kodi u ndryshua me sukses!');
       pinInput=''; pinRiTemp='';
@@ -199,6 +199,7 @@ async function bpKonfirmoPin(){
     mbyllModal('bruger-picker-modal');
     updateBrugerBadge();
     visToast(`Mirë se vini, ${b.navn}! ✓`);
+    if(typeof _resetInactivity==='function') _resetInactivity();
     bpPinInput='';bpZgjedhurBrugerId=null;
   } else {
     const g=document.getElementById('bp-pin-gabim');
@@ -2576,6 +2577,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     genindlaesVentende();
     opdaterAabneBadge();
   }, 8000);
+
+  // Auto-logout after 10 minutes of inactivity
+  let _inactivityTimer=null;
+  function _resetInactivity(){
+    if(!aktivBruger&&!erAdmin) return;
+    clearTimeout(_inactivityTimer);
+    _inactivityTimer=setTimeout(()=>{
+      if(aktivBruger||erAdmin){
+        visToast('U çkyçët automatikisht pas 10 minutash joaktiviteti','info');
+        logoutBruger();
+      }
+    },10*60*1000);
+  }
+  ['mousemove','mousedown','keydown','touchstart','scroll','click'].forEach(ev=>
+    document.addEventListener(ev,_resetInactivity,{passive:true})
+  );
 
   // Keyboard support for PIN modal
   document.addEventListener('keydown', e=>{
