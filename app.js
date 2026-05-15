@@ -2425,7 +2425,10 @@ async function renderAnalitika(){
   // ── Target panel ──
   const targetKey=`pizza_target_${yr}_${mo}`;
   const targetVal=parseFloat(localStorage.getItem(targetKey))||0;
-  const expectedSoFar=targetVal>0?parseFloat((targetVal*todayDay/daysInMonth).toFixed(2)):0;
+  // Use active days only (from dataStartDay, not day 1) so the expected pace is fair
+  const activeMonthDays=daysInMonth-dataStartDay+1;
+  const activeDaysElapsed=Math.max(0,todayDay-dataStartDay+1);
+  const expectedSoFar=targetVal>0?parseFloat((targetVal*activeDaysElapsed/activeMonthDays).toFixed(2)):0;
   const diff=totalSoFar-expectedSoFar;
   const pct=targetVal>0?Math.round(totalSoFar/targetVal*100):0;
   const ahead=diff>=0;
@@ -2446,7 +2449,7 @@ async function renderAnalitika(){
       <div class="target-stats">
         <div>Realizuar: <strong>${euro(totalSoFar)}</strong></div>
         <div>Target i muajit: <strong>${euro(targetVal)}</strong></div>
-        <div>Pritet sot (${todayDay}/${daysInMonth}): <strong>${euro(expectedSoFar)}</strong></div>
+        <div>Pritet sot (ditë ${activeDaysElapsed}/${activeMonthDays} aktive): <strong>${euro(expectedSoFar)}</strong></div>
       </div>
       <div class="target-pace ${ahead?'target-pace-ahead':'target-pace-behind'}">
         ${ahead?'▲':'▼'} ${euro(Math.abs(diff))} ${ahead?'para targetit sot':'prapa targetit sot'}
