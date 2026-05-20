@@ -1376,14 +1376,28 @@ function ruajNdryshimet(){
   o.log.push(...riLogje);
 
   gemData();
+
+  // Sync ordre_linjer to Supabase: delete old lines, insert new
+  const _oid = redaktimOrdreId;
+  const _linjer = redaktimKurv.map(i=>({
+    ordre_id: _oid,
+    produkt_id: i.produkt_id,
+    navn: i.produkt_navn,
+    pris: i.produkt_pris,
+    antal: i.antal
+  }));
+  sb.from('ordre_linjer').delete().eq('ordre_id',_oid).then(()=>{
+    if(_linjer.length) sb.from('ordre_linjer').insert(_linjer).then();
+  });
+
   mbyllModal('redaktim-modal');
   renderAabneBorde();
   visToast(`${riLogje.length} ndryshim${riLogje.length!==1?'e':''} u ruajtën ✓`);
 
   // Hap logun automatikisht
   setTimeout(()=>{
-    const el=document.getElementById('log-entries-'+redaktimOrdreId);
-    const arrow=document.getElementById('log-arrow-'+redaktimOrdreId);
+    const el=document.getElementById('log-entries-'+_oid);
+    const arrow=document.getElementById('log-arrow-'+_oid);
     if(el){el.style.display='flex';if(arrow)arrow.textContent='▾'}
   },100);
 }
