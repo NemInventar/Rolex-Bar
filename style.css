@@ -720,7 +720,8 @@ body{
 #redaktim-modal .modal{max-width:680px;width:96%;padding:24px;max-height:92vh;overflow-y:auto}
 .red-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
 @media(max-width:600px){.red-grid{grid-template-columns:1fr}}
-.red-seksion{background:var(--bg);border-radius:14px;padding:16px}
+.red-seksion{background:var(--bg);border-radius:14px;padding:16px;display:flex;flex-direction:column}
+#redaktim-items{max-height:260px;overflow-y:auto;display:flex;flex-direction:column;gap:4px}
 .red-seksion h4{
   font-size:.76rem;font-weight:700;color:var(--tekst-lys);
   text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;
