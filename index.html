@@ -33,12 +33,12 @@
 </div>
 
 <div id="tabs">
-  <div class="tab" onclick="skiftTab('pos')">🛒 Arkë</div>
+  <div class="tab" id="tab-pos" onclick="skiftTab('pos')" style="display:none">🛒 Arkë</div>
   <div class="tab aktiv" onclick="skiftTab('aabne')" id="tab-aabne">🍽️ Tavolinat</div>
   <div class="tab" onclick="skiftTab('ventende')" id="tab-ventende">📱 Mobil</div>
-  <div class="tab" onclick="skiftTab('omsaetning')">📊 Xhiro</div>
-  <div class="tab" onclick="skiftTab('historik')">📋 Historiku</div>
-  <div class="tab" onclick="skiftTab('produkter')">⚙️ Cilësimet</div>
+  <div class="tab" onclick="skiftTab('omsaetning')" id="tab-omsaetning">📊 Xhiro</div>
+  <div class="tab" onclick="skiftTab('historik')" id="tab-historik">📋 Historiku</div>
+  <div class="tab" onclick="skiftTab('produkter')" id="tab-produkter">⚙️ Cilësimet</div>
   <div class="tab" onclick="skiftTab('analitika')" id="tab-analitika" style="display:none">📊 Analitika</div>
   <div class="tab" onclick="hapZRaport()" style="margin-left:auto">📄 Raport Z</div>
 </div>
@@ -47,19 +47,32 @@
 
   <!-- ARKË -->
   <div class="side" id="pos-side">
-    <div id="produkter-panel">
-      <div id="kategori-bar"></div>
-      <div id="produkt-grid"></div>
+    <!-- LEFT: vertical category list -->
+    <div id="kat-kolona"></div>
+
+    <!-- CENTER: quick items or product grid -->
+    <div id="mjet-panel">
+      <div id="hurtig-panel">
+        <div id="hurtig-titull">⚡ Të shpeshta tani</div>
+        <div id="hurtig-grid"><div class="ps-loading">Duke ngarkuar...</div></div>
+      </div>
+      <div id="produkt-panel" style="display:none">
+        <button class="kthehu-btn" onclick="kthehurNëHurtig()">← Kthehu</button>
+        <div id="produkt-grid"></div>
+      </div>
     </div>
+
+    <!-- RIGHT: cart -->
     <div id="kurv-panel">
-      <div id="kurv-header"><h3>🛒 Porosi aktive</h3></div>
+      <div id="kurv-header">
+        <h3>🛒 Porosi aktive</h3>
+        <div id="kurv-bord-info"></div>
+      </div>
+      <input type="hidden" id="bord-felt" value="">
+      <div id="bord-gabim" style="display:none;font-size:.76rem;color:var(--roed);font-weight:600;margin:4px 12px;padding:5px 8px;background:#FADBD8;border-radius:6px"></div>
       <div id="kurv-liste"><div class="kurv-tom">Shporta është bosh.<br>Trokitni mbi një produkt.</div></div>
       <div id="kurv-bund">
         <div class="total-linje hoved"><span>Totali</span><span id="k-total">0,00 €</span></div>
-        <label class="bord-label">🪑 Zgjidh tavolinën</label>
-        <div class="table-picker" id="table-picker"></div>
-        <input type="text" class="bord-input" id="bord-felt" placeholder="ose shkruaj numrin..." oninput="onBordInput(this)">
-        <div id="bord-gabim" style="display:none;font-size:.76rem;color:var(--roed);font-weight:600;margin-top:4px;padding:5px 8px;background:#FADBD8;border-radius:6px"></div>
         <label class="bord-label">📝 Shënim</label>
         <input type="text" class="bord-input" id="noter-felt" placeholder="pa qepë, alergjia..." style="margin-bottom:0">
         <button id="btn-opret" onclick="opretBestilling()" disabled>🍽️ Krijo porosinë</button>
