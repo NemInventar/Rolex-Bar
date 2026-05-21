@@ -2717,6 +2717,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     else if(e.key==='Escape'){e.preventDefault();mbyllLoginModal()}
   });
 
+  // Keyboard support for staff PIN (bruger-picker)
+  document.addEventListener('keydown', e=>{
+    const modal=document.getElementById('bruger-picker-modal');
+    if(!modal?.classList.contains('vis')) return;
+    if(document.getElementById('bp-pin')?.style.display==='none') return;
+    if(e.key>='0'&&e.key<='9'){e.preventDefault();bpPinShto(e.key)}
+    else if(e.key==='Backspace'){e.preventDefault();bpPinFshi()}
+    else if(e.key==='Escape'){e.preventDefault();document.getElementById('bp-pin').style.display='none'}
+  });
+
   // Keyboard support for cash modal
   document.addEventListener('keydown', e=>{
     if(!document.getElementById('kesh-modal').classList.contains('vis')) return;
