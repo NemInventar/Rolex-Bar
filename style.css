@@ -195,47 +195,55 @@ body{
 
 /* ─── POS LAYOUT ─────────────────────────────────── */
 #pos-side{flex-direction:row}
-#produkter-panel{
-  flex:1;
-  display:flex;
-  flex-direction:column;
-  overflow:hidden;
-  background:var(--bg);
-  padding:14px;
-  gap:12px;
-}
 
-/* Kategori pills */
-#kategori-bar{
-  display:flex;
-  gap:6px;
-  flex-wrap:nowrap;
-  overflow-x:auto;
-  padding-bottom:2px;
-  scrollbar-width:none;
+/* LEFT: vertical category column */
+#kat-kolona{
+  width:150px;flex-shrink:0;
+  display:flex;flex-direction:column;gap:5px;
+  padding:10px 8px;overflow-y:auto;
+  background:var(--hvid);border-right:1px solid var(--border);
 }
-#kategori-bar::-webkit-scrollbar{height:4px}
-#kategori-bar::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
-.kat-btn{
-  padding:8px 18px;
-  border:1.5px solid var(--border);
-  border-radius:99px;
-  cursor:pointer;
-  font-size:.8rem;
-  font-weight:600;
-  color:var(--tekst-lys);
-  background:var(--hvid);
-  white-space:nowrap;
-  transition:all .15s;
-  font-family:inherit;
+.kat-v-btn{
+  width:100%;padding:13px 10px;
+  background:#22c55e;color:#fff;
+  border:none;border-radius:10px;
+  font-size:.82rem;font-weight:700;cursor:pointer;
+  text-align:center;transition:all .12s;font-family:inherit;
+  line-height:1.3;
 }
-.kat-btn:hover{border-color:var(--guld);color:var(--tekst)}
-.kat-btn.aktiv{
-  background:var(--brun);
-  color:#fff;
-  border-color:var(--brun);
-  box-shadow:0 2px 8px rgba(26,10,5,.2);
+.kat-v-btn:hover{filter:brightness(1.1);transform:translateX(2px)}
+.kat-v-btn.aktiv{background:#15803d;box-shadow:0 2px 8px rgba(21,128,61,.3)}
+
+/* CENTER: mjet panel */
+#mjet-panel{flex:1;display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
+#hurtig-panel{flex:1;display:flex;flex-direction:column;padding:12px;overflow-y:auto;gap:10px}
+#hurtig-titull{font-size:.7rem;font-weight:700;color:var(--tekst-lys);text-transform:uppercase;letter-spacing:.5px}
+#hurtig-grid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:8px;align-content:start;
 }
+.hurtig-btn{
+  background:var(--hvid);border:1.5px solid var(--border);
+  border-radius:12px;padding:12px 8px;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  font-family:inherit;transition:all .12s;text-align:center;
+}
+.hurtig-btn:hover{background:var(--brun);color:#fff;border-color:var(--brun)}
+.hurtig-btn:hover .h-cmimi{color:rgba(255,255,255,.7)}
+.hurtig-btn:active{transform:scale(.95)}
+.h-ikon{font-size:1.7rem;line-height:1}
+.h-emri{font-size:.72rem;font-weight:700;line-height:1.2}
+.h-cmimi{font-size:.68rem;color:var(--tekst-lys)}
+#produkt-panel{flex:1;display:flex;flex-direction:column;overflow:hidden;padding:10px}
+.kthehu-btn{
+  align-self:flex-start;padding:6px 14px;
+  background:var(--bg2);border:1.5px solid var(--border);
+  border-radius:8px;cursor:pointer;font-size:.78rem;font-weight:600;
+  color:var(--tekst-lys);margin-bottom:8px;font-family:inherit;
+  transition:all .12s;
+}
+.kthehu-btn:hover{border-color:var(--brun);color:var(--brun)}
 
 /* Produkt grid */
 #produkt-grid{
@@ -342,9 +350,13 @@ body{
   box-shadow:-2px 0 12px rgba(0,0,0,.04);
 }
 #kurv-header{
-  padding:16px 18px;
+  padding:12px 18px;
   border-bottom:1px solid var(--border);
   background:var(--hvid);
+}
+#kurv-bord-info{
+  font-size:.78rem;font-weight:700;color:#15803d;
+  margin-top:3px;
 }
 #kurv-header h3{
   font-size:.9rem;
