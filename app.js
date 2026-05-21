@@ -510,11 +510,10 @@ function mbyllLoginModal(){mbyllModal('login-modal');if(!aktivBruger&&!erAdmin)h
 function skiftTab(tab) {
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('aktiv'));
   document.querySelectorAll('.side').forEach(s=>s.classList.remove('aktiv'));
-  const idx={'pos':0,'aabne':1,'ventende':2,'omsaetning':3,'historik':4,'produkter':5,'analitika':6};
-  const tabs=document.querySelectorAll('.tab');
-  if(idx[tab]!==undefined) tabs[idx[tab]].classList.add('aktiv');
+  document.getElementById('tab-'+tab)?.classList.add('aktiv');
   document.getElementById(tab+'-side').classList.add('aktiv');
   if(tab==='aabne') renderAabneBorde();
+  if(tab==='pos') renderHurtigItems();
   if(tab==='omsaetning'){
     document.getElementById('periode-dato').value=sotDita();
     if(!document.getElementById('ps-fra').value){
@@ -533,11 +532,7 @@ function skiftTab(tab) {
   if(tab==='ventende') genindlaesVentende();
   if(tab==='produkter'){
     if(!erAdmin){
-      // Redirect to POS — non-admin staff have no access here
-      document.querySelectorAll('.tab').forEach(t=>t.classList.remove('aktiv'));
-      document.querySelectorAll('.side').forEach(s=>s.classList.remove('aktiv'));
-      document.querySelector('.tab').classList.add('aktiv');
-      document.getElementById('pos-side').classList.add('aktiv');
+      skiftTab('aabne');
       if(!aktivBruger){_pendingTab='produkter';hapLoginModalNormal();}
       visToast('🔒 Keni nevojë për login Admin!','gabim');
       return;
@@ -547,10 +542,7 @@ function skiftTab(tab) {
   }
   if(tab==='analitika'){
     if(!erAdmin){
-      document.querySelectorAll('.tab').forEach(t=>t.classList.remove('aktiv'));
-      document.querySelectorAll('.side').forEach(s=>s.classList.remove('aktiv'));
-      document.querySelector('.tab').classList.add('aktiv');
-      document.getElementById('pos-side').classList.add('aktiv');
+      skiftTab('aabne');
       _pendingTab='analitika';
       hapLoginModalNormal();
       return;
@@ -570,11 +562,107 @@ function skiftTab(tab) {
 // PRODUKT GRID
 // =============================================
 function renderKategorier(){
-  const bar=document.getElementById('kategori-bar');
-  bar.innerHTML=`<button class="kat-btn ${aktivKategori==='alle'?'aktiv':''}" onclick="filtrerKategori('alle')">Të gjitha</button>`;
-  kategorier.forEach(k=>{bar.innerHTML+=`<button class="kat-btn ${aktivKategori===k.id?'aktiv':''}" onclick="filtrerKategori('${k.id}')">${k.navn}</button>`});
+  const kolona=document.getElementById('kat-kolona');
+  if(!kolona) return;
+  kolona.innerHTML=kategorier.map(k=>`
+    <button class="kat-v-btn${aktivKategori===k.id?' aktiv':''}" onclick="filtrerKategori('${k.id}')">
+      ${k.ikon?k.ikon+' ':''}${k.navn}
+    </button>`).join('');
 }
-function filtrerKategori(id){aktivKategori=id;renderKategorier();renderProduktGrid()}
+function filtrerKategori(id){
+  aktivKategori=id;
+  renderKategorier();
+  renderProduktGrid();
+  document.getElementById('hurtig-panel').style.display='none';
+  document.getElementById('produkt-panel').style.display='flex';
+}
+function kthehurNëHurtig(){
+  aktivKategori='alle';
+  renderKategorier();
+  document.getElementById('produkt-panel').style.display='none';
+  document.getElementById('hurtig-panel').style.display='flex';
+  renderHurtigItems();
+}
+
+// =============================================
+// HURTIGE VARER — dynamisk baseret på historik + tidspunkt
+// =============================================
+let _hurtigCache=[];
+let _hurtigTs=0;
+
+async function hentHurtigItems(){
+  const now=Date.now();
+  if(now-_hurtigTs<5*60*1000&&_hurtigCache.length) return _hurtigCache;
+
+  const fraStr=new Date(now-14*24*3600000).toISOString();
+  const {data}=await sb.from('ordrer')
+    .select('oprettet,ordre_linjer(produkt_id,navn,antal)')
+    .eq('restaurant_id',RESTAURANT_ID)
+    .eq('status','betalt')
+    .gte('oprettet',fraStr);
+
+  const nowLocal=new Date(now+2*3600000);
+  const curHour=nowLocal.getUTCHours();
+  const WIN=2; // ±2 timer vindue
+  const scored={};
+
+  (data||[]).forEach(o=>{
+    const oLocal=new Date(new Date(o.oprettet).getTime()+2*3600000);
+    const oHour=oLocal.getUTCHours();
+    const diff=Math.min(Math.abs(oHour-curHour),24-Math.abs(oHour-curHour));
+    if(diff>WIN) return;
+    const w=1-(diff/(WIN+1))*0.5; // 1.0 samme time → 0.67 ved ±2t
+    (o.ordre_linjer||[]).forEach(l=>{
+      if(!scored[l.produkt_id]) scored[l.produkt_id]={produkt_id:l.produkt_id,navn:l.navn,s:0};
+      scored[l.produkt_id].s+=l.antal*w;
+    });
+  });
+
+  let ranked=Object.values(scored).sort((a,b)=>b.s-a.s);
+
+  // Fallback: ingen tids-filter hvis for lidt data
+  if(ranked.length<6){
+    const allScored={};
+    (data||[]).forEach(o=>(o.ordre_linjer||[]).forEach(l=>{
+      if(!allScored[l.produkt_id]) allScored[l.produkt_id]={produkt_id:l.produkt_id,s:0};
+      allScored[l.produkt_id].s+=l.antal;
+    }));
+    const allRanked=Object.values(allScored).sort((a,b)=>b.s-a.s);
+    const existing=new Set(ranked.map(r=>r.produkt_id));
+    for(const r of allRanked){if(!existing.has(r.produkt_id)){ranked.push(r);existing.add(r.produkt_id)}}
+  }
+
+  // Map til produkter-objekter, fyld op til 12 fra alle produkter hvis nødvendigt
+  const existing=new Set();
+  _hurtigCache=[];
+  for(const r of ranked){
+    const p=produkter.find(x=>x.id===r.produkt_id&&!x.udsolgt);
+    if(p&&!existing.has(p.id)){_hurtigCache.push(p);existing.add(p.id)}
+    if(_hurtigCache.length>=12) break;
+  }
+  if(_hurtigCache.length<12){
+    for(const p of produkter){
+      if(!p.udsolgt&&!existing.has(p.id)){_hurtigCache.push(p);existing.add(p.id)}
+      if(_hurtigCache.length>=12) break;
+    }
+  }
+  _hurtigTs=now;
+  return _hurtigCache;
+}
+
+async function renderHurtigItems(){
+  const grid=document.getElementById('hurtig-grid');
+  if(!grid) return;
+  grid.innerHTML='<div class="ps-loading" style="grid-column:1/-1">⏳ Duke ngarkuar...</div>';
+  const items=await hentHurtigItems();
+  if(!items.length){grid.innerHTML='<div style="grid-column:1/-1;color:var(--tekst-lys);padding:20px;text-align:center">Nuk ka të dhëna akoma.</div>';return}
+  grid.innerHTML=items.map(p=>`
+    <button class="hurtig-btn" onclick="shtoNëShportë('${p.id}')">
+      <div class="h-ikon">${p.ikon||'🍽️'}</div>
+      <div class="h-emri">${emriBazë(p.navn)}</div>
+      <div class="h-cmimi">${euro(p.pris)}</div>
+    </button>`).join('');
+}
 
 // Grupëzo produktet sipas emrit bazë (pa sufiksin e madhësisë)
 function emriBazë(emri){return emri.replace(/\s*\([SML]\)\s*$/,'').trim()}
@@ -660,11 +748,12 @@ function rydKurv(){
   kurv=[];
   posPikZone=null;
   document.getElementById('bord-felt').value='';
-  document.getElementById('bord-felt').classList.remove('gabim');
   document.getElementById('bord-gabim').style.display='none';
   document.getElementById('noter-felt').value='';
+  const bi=document.getElementById('kurv-bord-info');if(bi) bi.textContent='';
   renderShporta();
-  renderTablePicker();
+  document.getElementById('tab-pos').style.display='none';
+  skiftTab('aabne');
 }
 
 // =============================================
@@ -709,16 +798,23 @@ function zgjidhZonePOS(zone){
 }
 
 function zgjidhTavolinë(nr){
-  const inp=document.getElementById('bord-felt');
-  inp.value=nr;
-  inp.classList.remove('gabim');
+  document.getElementById('bord-felt').value=nr;
   document.getElementById('bord-gabim').style.display='none';
-  renderTablePicker();
+  const bi=document.getElementById('kurv-bord-info');
+  if(bi) bi.textContent=nr?`🪑 Tavolina ${nr}`:'';
+  const btn=document.getElementById('btn-opret');
+  if(btn&&nr) btn.disabled=false;
 }
 
 function fillBordAndGoToArke(nr){
+  document.getElementById('tab-pos').style.display='';
   skiftTab('pos');
   zgjidhTavolinë(nr);
+  // Reset to quick-items view on each new table
+  document.getElementById('produkt-panel').style.display='none';
+  document.getElementById('hurtig-panel').style.display='flex';
+  aktivKategori='alle';
+  renderKategorier();
 }
 function renderShporta(){
   const liste=document.getElementById('kurv-liste');
@@ -2580,8 +2676,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   // After init, reload to get any freshly inserted rows
   await loadData();
   renderKategorier();
-  renderProduktGrid();
-  renderTablePicker();
   renderAabneBorde();
   genindlaesVentende();
   opdaterAabneBadge();
@@ -2594,6 +2688,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderAabneBorde();
     genindlaesVentende();
     opdaterAabneBadge();
+    // Rydder hurtig-cache hvert 10 min så den tager nye ordrer med
+    if(Date.now()-_hurtigTs>10*60*1000) _hurtigTs=0;
   }, 8000);
 
   // Auto-logout after 30 seconds of inactivity
