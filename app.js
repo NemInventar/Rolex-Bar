@@ -2582,6 +2582,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderKategorier();
   renderProduktGrid();
   renderTablePicker();
+  renderAabneBorde();
   genindlaesVentende();
   opdaterAabneBadge();
   if(!aktivBruger&&!erAdmin) hapBrugerPicker();
