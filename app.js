@@ -872,6 +872,7 @@ function opretBestilling(){
   };
   ordrer.push(ordre);
   _insertNyOrdre(ordre); // insert order + linjer én gang
+  printOrderSlip(ordre);
   rydKurv(); opdaterAabneBadge();
   visCelebrationPorosi(ordre);
 }
@@ -891,6 +892,69 @@ function onBordInput(inp){
 
 // =============================================
 // CELEBRATION
+// =============================================
+// PRINT ORDER SLIP
+// =============================================
+function printOrderSlip(ordre){
+  // Kosovo time (UTC+2)
+  const d=new Date(new Date(ordre.oprettet).getTime()+2*3600000);
+  const dd=String(d.getUTCDate()).padStart(2,'0');
+  const mm=String(d.getUTCMonth()+1).padStart(2,'0');
+  const hh=String(d.getUTCHours()).padStart(2,'0');
+  const mi=String(d.getUTCMinutes()).padStart(2,'0');
+  const koha=`${dd}.${mm}.${d.getUTCFullYear()} ${hh}:${mi}`;
+
+  const itemRows=ordre.items.map(i=>{
+    const emri=i.produkt_navn.length>22?i.produkt_navn.slice(0,21)+'…':i.produkt_navn;
+    const val=euro(i.produkt_pris*i.antal);
+    const pad=30-emri.length-val.length;
+    return `${i.antal}x ${emri}${' '.repeat(Math.max(1,pad))}${val}`;
+  }).join('\n');
+
+  const html=`<!DOCTYPE html><html><head><meta charset="utf-8">
+<style>
+  @page{margin:4mm;size:80mm auto}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Courier New',Courier,monospace;font-size:12px;width:72mm;color:#000}
+  .c{text-align:center}
+  .b{font-weight:bold}
+  .big{font-size:16px;font-weight:bold;letter-spacing:2px}
+  .sep{border:none;border-top:1px dashed #000;margin:5px 0}
+  .row{display:flex;justify-content:space-between;margin:2px 0}
+  .total{font-size:14px;font-weight:bold}
+  pre{font-family:inherit;font-size:12px;white-space:pre-wrap}
+</style>
+</head><body>
+  <div class="c big">ROLEX BAR</div>
+  <div class="c" style="font-size:10px;margin:2px 0">— URDHËRIM —</div>
+  <hr class="sep">
+  <div class="row"><span>Tavolina:</span><span class="b">${ordre.bord}</span></div>
+  <div class="row"><span>Porosi #:</span><span class="b">${ordre.ordre_nummer}</span></div>
+  <div class="row"><span>Ora:</span><span>${koha}</span></div>
+  ${ordre.bruger_navn?`<div class="row"><span>Kamerier:</span><span>${ordre.bruger_navn}</span></div>`:''}
+  <hr class="sep">
+  <pre>${itemRows}</pre>
+  <hr class="sep">
+  <div class="row total"><span>TOTALI</span><span>${euro(ordre.total)}</span></div>
+  ${ordre.note?`<hr class="sep"><div style="font-size:11px">Shënim: ${ordre.note}</div>`:''}
+  <div style="margin-top:8px;text-align:center;font-size:10px;color:#666">Faleminderit!</div>
+</body></html>`;
+
+  const iframe=document.createElement('iframe');
+  iframe.style.cssText='position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;border:none;visibility:hidden';
+  document.body.appendChild(iframe);
+  iframe.contentDocument.open();
+  iframe.contentDocument.write(html);
+  iframe.contentDocument.close();
+  iframe.onload=()=>{
+    iframe.contentWindow.focus();
+    iframe.contentWindow.print();
+    iframe.contentWindow.onafterprint=()=>document.body.removeChild(iframe);
+    // Fallback cleanup
+    setTimeout(()=>{if(iframe.parentNode)document.body.removeChild(iframe)},30000);
+  };
+}
+
 // =============================================
 function visCelebrationPorosi(ordre){
   document.getElementById('cel-ikon').textContent='🍽️';
