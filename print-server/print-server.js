@@ -9,13 +9,20 @@ const PRINTER_NAME = 'RONGTA 80mm Series Printer';
 const PS_SCRIPT = path.join(__dirname, 'print-raw.ps1');
 const ESC = 0x1B, GS = 0x1D;
 
+// Albanian characters ë/ç don't exist in printer's CP437 charset
+function norm(str) {
+  return String(str || '')
+    .replace(/ë/g, 'e').replace(/Ë/g, 'E')
+    .replace(/ç/g, 'c').replace(/Ç/g, 'C');
+}
+
 function rjust(left, right, total) {
   right = String(right);
-  left = left.slice(0, total - right.length - 1);
+  left = norm(left).slice(0, total - right.length - 1);
   return left + ' '.repeat(Math.max(1, total - left.length - right.length)) + right;
 }
 
-function buildReceipt(o) {
+function buildKitchenSlip(o) {
   const chunks = [
     Buffer.from([ESC, 0x40]),
     Buffer.from([ESC, 0x61, 0x01]),
@@ -25,10 +32,18 @@ function buildReceipt(o) {
     Buffer.from('Bar & Restaurant\n'),
     Buffer.from([ESC, 0x61, 0x00]),
     Buffer.from('--------------------------------\n'),
-    Buffer.from('Tavolina: ' + (o.bord || '-') + '\n'),
+    Buffer.from([ESC, 0x61, 0x01]),
+    Buffer.from([ESC, 0x45, 0x01]),
+    Buffer.from([ESC, 0x21, 0x10]),
+    Buffer.from('*** POROSI ***\n'),
+    Buffer.from([ESC, 0x21, 0x00]),
+    Buffer.from([ESC, 0x45, 0x00]),
+    Buffer.from([ESC, 0x61, 0x00]),
+    Buffer.from('--------------------------------\n'),
+    Buffer.from('Tavolina: ' + norm(o.bord || '-') + '\n'),
     Buffer.from('Porosi #: ' + (o.ordre_nummer || '-') + '\n'),
-    Buffer.from('Ora: ' + new Date(o.oprettet).toLocaleTimeString('sq-AL',{hour:'2-digit',minute:'2-digit',hour12:false}) + '\n'),
-    Buffer.from('Kamarier: ' + (o.bruger_navn || '-') + '\n'),
+    Buffer.from('Ora: ' + new Date(o.oprettet).toLocaleTimeString('sq-AL', {hour:'2-digit',minute:'2-digit',hour12:false}) + '\n'),
+    Buffer.from('Kamarier: ' + norm(o.bruger_navn || '-') + '\n'),
     Buffer.from('--------------------------------\n'),
     ...(o.items || []).map(i =>
       Buffer.from(rjust(i.antal + 'x ' + i.produkt_navn, (i.produkt_pris * i.antal).toFixed(2) + 'E', 32) + '\n')
@@ -37,6 +52,44 @@ function buildReceipt(o) {
     Buffer.from([ESC, 0x45, 0x01]),
     Buffer.from('TOTALI: ' + Number(o.total).toFixed(2) + ' EUR\n'),
     Buffer.from([ESC, 0x45, 0x00]),
+    Buffer.from('\n\n\n'),
+    Buffer.from([GS, 0x56, 0x00]),
+  ];
+  return Buffer.concat(chunks);
+}
+
+function buildReceiptSlip(o) {
+  const met = o.betaling === 'kontant' ? 'Kesh' : o.betaling === 'kort' ? 'Karte' : 'Mobil';
+  const chunks = [
+    Buffer.from([ESC, 0x40]),
+    Buffer.from([ESC, 0x61, 0x01]),
+    Buffer.from([ESC, 0x45, 0x01]),
+    Buffer.from('ROLEX BAR\n'),
+    Buffer.from([ESC, 0x45, 0x00]),
+    Buffer.from('Bar & Restaurant\n'),
+    Buffer.from([ESC, 0x61, 0x00]),
+    Buffer.from('--------------------------------\n'),
+    Buffer.from('Tavolina: ' + norm(o.bord || '-') + '\n'),
+    Buffer.from('Porosi #: ' + (o.ordre_nummer || '-') + '\n'),
+    Buffer.from('Ora: ' + new Date(o.oprettet).toLocaleTimeString('sq-AL', {hour:'2-digit',minute:'2-digit',hour12:false}) + '\n'),
+    Buffer.from('Kamarier: ' + norm(o.bruger_navn || '-') + '\n'),
+    Buffer.from('--------------------------------\n'),
+    ...(o.items || []).map(i =>
+      Buffer.from(rjust(i.antal + 'x ' + i.produkt_navn, (i.produkt_pris * i.antal).toFixed(2) + 'E', 32) + '\n')
+    ),
+    Buffer.from('================================\n'),
+    Buffer.from([ESC, 0x45, 0x01]),
+    Buffer.from('TOTALI: ' + Number(o.total).toFixed(2) + ' EUR\n'),
+    Buffer.from([ESC, 0x45, 0x00]),
+    Buffer.from('Paguar me: ' + met + '\n'),
+    ...(Number(o.kusuri) > 0.001 ? [Buffer.from('Kusuri: ' + Number(o.kusuri).toFixed(2) + ' EUR\n')] : []),
+    Buffer.from('================================\n'),
+    Buffer.from([ESC, 0x61, 0x01]),
+    Buffer.from([ESC, 0x45, 0x01]),
+    Buffer.from('FATURA E PAGUAR\n'),
+    Buffer.from([ESC, 0x45, 0x00]),
+    Buffer.from('Faleminderit!\n'),
+    Buffer.from([ESC, 0x61, 0x00]),
     Buffer.from('\n\n\n'),
     Buffer.from([GS, 0x56, 0x00]),
   ];
@@ -72,9 +125,11 @@ const server = http.createServer((req, res) => {
     req.on('end', () => {
       try {
         const order = JSON.parse(body);
-        const data = buildReceipt(order);
+        const data = order.printType === 'receipt'
+          ? buildReceiptSlip(order)
+          : buildKitchenSlip(order);
         printRaw(data);
-        console.log('Print OK:', order.ordre_nummer || '-');
+        console.log('Print OK [' + (order.printType || 'kitchen') + ']:', order.ordre_nummer || '-');
         res.writeHead(200); res.end('{"ok":true}');
       } catch (e) {
         console.error('Print error:', e.message);
