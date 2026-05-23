@@ -952,13 +952,13 @@ async function lidhPrinter(){
   }
 }
 
-async function printOrderSlip(ordre){
+async function printOrderSlip(ordre, type='kitchen'){
   // Prøv lokal print-server (silent)
   try{
     const r=await fetch('http://localhost:3001/print',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify(ordre),
+      body:JSON.stringify({...ordre, printType:type}),
       signal:AbortSignal.timeout(3000)
     });
     if(r.ok) return; // silent print lykkedes
@@ -1008,11 +1008,17 @@ function visCelebrationPagese(ordre, kusuri){
   krijoKonfetti(['#27AE60','#C9963B','#fff','#2ECC71','#F1C40F'],70);
   document.getElementById('celebration').classList.add('vis');
   setTimeout(()=>{
+    const ps=document.getElementById('cel-print-status');
+    if(ps) ps.style.display='block';
+  },2000);
+  setTimeout(()=>{
     if(document.getElementById('celebration').classList.contains('vis')){
+      const ps=document.getElementById('cel-print-status');
+      if(ps) ps.style.display='none';
       mbyllCelebration();
       mbyllModal('kvittering-modal');
       skiftTab('aabne');
-      if(aktivFatureOrdre) printOrderSlip(aktivFatureOrdre);
+      if(aktivFatureOrdre) printOrderSlip(aktivFatureOrdre,'receipt');
     }
   },3000);
 }
