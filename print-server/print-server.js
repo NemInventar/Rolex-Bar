@@ -125,9 +125,8 @@ const server = http.createServer((req, res) => {
     req.on('end', () => {
       try {
         const order = JSON.parse(body);
-        const data = order.printType === 'receipt'
-          ? buildReceiptSlip(order)
-          : buildKitchenSlip(order);
+        const isReceipt = order.printType === 'receipt' || !!order.betaling;
+        const data = isReceipt ? buildReceiptSlip(order) : buildKitchenSlip(order);
         printRaw(data);
         console.log('Print OK [' + (order.printType || 'kitchen') + ']:', order.ordre_nummer || '-');
         res.writeHead(200); res.end('{"ok":true}');
