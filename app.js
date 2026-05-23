@@ -287,7 +287,7 @@ function fshiNjeOrdre(id){
   if(!erAdmin){ hapLoginModalNormal(); visToast('🔒 Keni nevojë për login Admin!','gabim'); return; }
   const o=ordrer.find(x=>x.id===id);
   if(!o) return;
-  const koha=new Date(o.oprettet).toLocaleTimeString('sq-AL',{hour:'2-digit',minute:'2-digit'});
+  const koha=new Date(o.oprettet).toLocaleTimeString('sq-AL',{hour:'2-digit',minute:'2-digit',hour12:false});
   if(!confirm(`Fshi porosinë #${o.ordre_nummer} (${koha}, ${euro(o.total)})?`)) return;
   ordrer=ordrer.filter(x=>x.id!==id);
   gemData();
@@ -496,7 +496,7 @@ async function initTavolinat() {
 // HELPERS
 // =============================================
 function euro(v){return v.toFixed(2).replace('.',',')+' €'}
-function formatData(s){const d=new Date(s);return d.toLocaleDateString('sq-AL')+' '+d.toLocaleTimeString('sq-AL',{hour:'2-digit',minute:'2-digit'})}
+function formatData(s){const d=new Date(s);return d.toLocaleDateString('sq-AL')+' '+d.toLocaleTimeString('sq-AL',{hour:'2-digit',minute:'2-digit',hour12:false})}
 function sotDita(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
 function _localIso(dateStr,time){return new Date(dateStr+'T'+time).toISOString()}
 function unikID(){return 'id_'+Date.now()+'_'+Math.random().toString(36).slice(2,7)}
@@ -916,7 +916,7 @@ function _buildReceiptHtml(ordre){
   pre{font-family:inherit;font-size:12px;white-space:pre-wrap}
 </style></head><body>
   <div class="c big">ROLEX BAR</div>
-  <div class="c" style="font-size:10px;margin:2px 0">— URDHËRIM —</div>
+  <div class="c" style="font-size:10px;margin:2px 0">Bar &amp; Restaurant</div>
   <hr class="sep">
   <div class="row"><span>Tavolina:</span><span class="b">${ordre.bord}</span></div>
   <div class="row"><span>Porosi #:</span><span class="b">${ordre.ordre_nummer}</span></div>
@@ -980,8 +980,8 @@ async function printOrderSlip(ordre){
 // =============================================
 function visCelebrationPorosi(ordre){
   document.getElementById('cel-ikon').textContent='🍽️';
-  document.getElementById('cel-titulli').textContent='Porosi u krijua!';
-  document.getElementById('cel-sub').textContent=`Tavolina ${ordre.bord} • #${ordre.ordre_nummer} • ${euro(ordre.total)}`;
+  document.getElementById('cel-titulli').textContent=`Porosi #${ordre.ordre_nummer}`;
+  document.getElementById('cel-sub').textContent=`Tavolina ${ordre.bord} • ${euro(ordre.total)}`;
   document.getElementById('cel-kusuri-boks').style.display='none';
   document.getElementById('cel-kthe-btn').style.display='none';
   celebrationOrdreId=null;
@@ -993,8 +993,9 @@ function visCelebrationPorosi(ordre){
 
 function visCelebrationPagese(ordre, kusuri){
   document.getElementById('cel-ikon').textContent='💰';
-  document.getElementById('cel-titulli').textContent='Pagesa u krye!';
-  document.getElementById('cel-sub').textContent=`Tavolina ${ordre.bord} • Kesh • ${euro(ordre.total)}`;
+  document.getElementById('cel-titulli').textContent='Fatura u pagua!';
+  const _met=ordre.betaling==='kontant'?'Kesh':ordre.betaling==='kort'?'Kartë':'Mobil';
+  document.getElementById('cel-sub').textContent=`Tavolina ${ordre.bord} • ${_met} • ${euro(ordre.total)}`;
   const kusuriBoks=document.getElementById('cel-kusuri-boks');
   if(kusuri>0.001){
     kusuriBoks.style.display='block';
@@ -1053,7 +1054,7 @@ function ktheOrdren(id){
   const o=ordrer.find(x=>x.id===id);
   if(!o) return;
   const nga=aktivBruger?.navn||'Admin';
-  const koha=new Date().toLocaleTimeString('sq-AL',{hour:'2-digit',minute:'2-digit'});
+  const koha=new Date().toLocaleTimeString('sq-AL',{hour:'2-digit',minute:'2-digit',hour12:false});
   o.note=(o.note?o.note+'\n':'')+'🔧 '+koha+' '+nga+': ktheu pagesën';
   o.status='aaben';
   o.betaling=null;
@@ -1166,13 +1167,13 @@ function pageoOrdrerGjithe(bord, metoda, kusuri=0){
 
 function hapFaturaKombinuar(bord, ordrerList, total, kusuri){
   const tani=new Date();
-  const ds=tani.toLocaleDateString('sq-AL')+' '+tani.toLocaleTimeString('sq-AL',{hour:'2-digit',minute:'2-digit'});
+  const ds=tani.toLocaleDateString('sq-AL')+' '+tani.toLocaleTimeString('sq-AL',{hour:'2-digit',minute:'2-digit',hour12:false});
   const S='================================';
-  let txt=`        ROLEX BAR\n     Eat & More\n${S}\n`;
+  let txt=`        ROLEX BAR\n     Bar & Restaurant\n${S}\n`;
   txt+=`Data: ${ds}\nTavolina: ${bord}\n`;
   txt+=`${S}\n`;
   ordrerList.forEach((o,i)=>{
-    const oKoha=new Date(o.oprettet).toLocaleTimeString('sq-AL',{hour:'2-digit',minute:'2-digit'});
+    const oKoha=new Date(o.oprettet).toLocaleTimeString('sq-AL',{hour:'2-digit',minute:'2-digit',hour12:false});
     txt+=`Porosi #${o.ordre_nummer} — ${oKoha}\n`;
     o.items.forEach(i=>{
       const nm=(i.antal+'× '+i.produkt_navn).slice(0,22);
@@ -1277,9 +1278,9 @@ function renderAabneBorde(){
           📋 ${log.length} ndryshim${log.length!==1?'e':''}
         </div>
         <div class="log-entries" id="log-entries-${ord.id}" style="display:none">
-          ${log.map(l=>`<div class="log-entry ${l.lloji}"><span class="log-koha">${new Date(l.koha).toLocaleTimeString('sq-AL',{hour:'2-digit',minute:'2-digit'})}${l.nga?` · ${l.nga}`:''}</span><span class="log-tekst">${l.pershkrim}</span></div>`).join('')}
+          ${log.map(l=>`<div class="log-entry ${l.lloji}"><span class="log-koha">${new Date(l.koha).toLocaleTimeString('sq-AL',{hour:'2-digit',minute:'2-digit',hour12:false})}${l.nga?` · ${l.nga}`:''}</span><span class="log-tekst">${l.pershkrim}</span></div>`).join('')}
         </div>`:'';
-      const ordKoha=new Date(ord.oprettet).toLocaleTimeString('sq-AL',{hour:'2-digit',minute:'2-digit'});
+      const ordKoha=new Date(ord.oprettet).toLocaleTimeString('sq-AL',{hour:'2-digit',minute:'2-digit',hour12:false});
       const ordElapsed=elapsedStr(ord.oprettet);
 
       return `
@@ -1661,9 +1662,9 @@ let aktivFatureOrdre=null;
 function hapFature(ordre){
   aktivFatureOrdre=ordre;
   const d=new Date(ordre.betalt||ordre.oprettet);
-  const ds=d.toLocaleDateString('sq-AL')+' '+d.toLocaleTimeString('sq-AL',{hour:'2-digit',minute:'2-digit'});
+  const ds=d.toLocaleDateString('sq-AL')+' '+d.toLocaleTimeString('sq-AL',{hour:'2-digit',minute:'2-digit',hour12:false});
   const S='================================';
-  let t=`        ROLEX BAR\n     Eat & More\n${S}\n`;
+  let t=`        ROLEX BAR\n     Bar & Restaurant\n${S}\n`;
   t+=`Data: ${ds}\nPorosi nr.: #${ordre.ordre_nummer}\n`;
   if(ordre.bord&&ordre.bord!=='–') t+=`Tavolina: ${ordre.bord}\n`;
   if(ordre.bruger_navn) t+=`Kamarieri: ${ordre.bruger_navn}\n`;
@@ -1685,7 +1686,7 @@ function printFature(){
   if(!aktivFatureOrdre) return;
   const o=aktivFatureOrdre;
   const d=new Date(o.betalt||o.oprettet);
-  const ds=d.toLocaleDateString('sq-AL')+' '+d.toLocaleTimeString('sq-AL',{hour:'2-digit',minute:'2-digit'});
+  const ds=d.toLocaleDateString('sq-AL')+' '+d.toLocaleTimeString('sq-AL',{hour:'2-digit',minute:'2-digit',hour12:false});
   document.getElementById('print-area').innerHTML=`<div style="width:80mm;font-family:'Courier New',monospace;font-size:12px;padding:4mm">
     <div style="text-align:center;font-size:15px;font-weight:bold;margin-bottom:3px">ROLEX BAR</div>
     <div style="text-align:center;font-size:10px;margin-bottom:7px">Eat & More</div>
@@ -1807,7 +1808,7 @@ function hapStafiOrdret(key, colorIdx){
   document.getElementById('so-liste').innerHTML=!ordret.length
     ?'<div class="ps-loading" style="padding:24px 0">Nuk ka porosi</div>'
     :ordret.map(o=>{
-        const koha=new Date(o.oprettet).toLocaleTimeString('sq-AL',{hour:'2-digit',minute:'2-digit'});
+        const koha=new Date(o.oprettet).toLocaleTimeString('sq-AL',{hour:'2-digit',minute:'2-digit',hour12:false});
         const data=new Date(o.oprettet).toLocaleDateString('sq-AL',{day:'2-digit',month:'2-digit'});
         const items=(o.items||[]).map(i=>i.antal+'× '+i.produkt_navn).join(', ');
         const bet=o.betaling==='kontant'?'💵 Kesh':o.betaling==='kort'?'💳 Kartë':'💳';
@@ -2003,7 +2004,7 @@ async function renderKassaKontroll(){
   if(mbyllBtn) mbyllBtn.style.display=(erAdmin&&!mbyllur)?'':'none';
 
   const timeStr=mbyllurNe
-    ?new Date(mbyllurNe).toLocaleTimeString('sq',{hour:'2-digit',minute:'2-digit'}):'';
+    ?new Date(mbyllurNe).toLocaleTimeString('sq',{hour:'2-digit',minute:'2-digit',hour12:false}):'';
   const banner=mbyllur
     ?`<div class="kassa-mbyllur-banner">✅ Ditë e mbyllur · ${dato}${timeStr?' · '+timeStr:''}${mbyllurNga?' nga '+mbyllurNga:''}`
       +(erAdmin?`<button class="kassa-rihap-btn" onclick="rihaditDiten('${dato}')">✏️ Rihap</button>`:'')
@@ -2139,7 +2140,7 @@ async function ngarkoHistorikenKasses(el){
     const mnga=rows[0]?.mbyllur_nga||'';
     const closedStr=mne
       ?mne.toLocaleDateString('sq',{day:'2-digit',month:'2-digit',year:'numeric'})
-        +' '+mne.toLocaleTimeString('sq',{hour:'2-digit',minute:'2-digit'})
+        +' '+mne.toLocaleTimeString('sq',{hour:'2-digit',minute:'2-digit',hour12:false})
       :dato;
     return `<details class="kh-dita">
       <summary class="kh-summary">
@@ -2260,12 +2261,12 @@ function hapFatureGrup(key){
   const kusuri=ordrerList[ordrerList.length-1].kusuri||0;
   const bord=ordrerList[0].bord;
   const d=new Date(ordrerList[ordrerList.length-1].betalt||ordrerList[ordrerList.length-1].oprettet);
-  const ds=d.toLocaleDateString('sq-AL')+' '+d.toLocaleTimeString('sq-AL',{hour:'2-digit',minute:'2-digit'});
+  const ds=d.toLocaleDateString('sq-AL')+' '+d.toLocaleTimeString('sq-AL',{hour:'2-digit',minute:'2-digit',hour12:false});
   const S='================================';
-  let t=`        ROLEX BAR\n     Eat & More\n${S}\n`;
+  let t=`        ROLEX BAR\n     Bar & Restaurant\n${S}\n`;
   t+=`Data: ${ds}\nTavolina: ${bord}\n${S}\n`;
   ordrerList.forEach((o,i)=>{
-    const oKoha=new Date(o.oprettet).toLocaleTimeString('sq-AL',{hour:'2-digit',minute:'2-digit'});
+    const oKoha=new Date(o.oprettet).toLocaleTimeString('sq-AL',{hour:'2-digit',minute:'2-digit',hour12:false});
     t+=`Porosi #${o.ordre_nummer} — ${oKoha}\n`;
     o.items.forEach(it=>{const nm=(it.antal+'× '+it.produkt_navn).slice(0,22);const pr=euro(it.produkt_pris*it.antal);t+=nm.padEnd(32-pr.length,' ')+pr+'\n'});
     if(i<ordrerList.length-1) t+=`--------------------------------\n`;
