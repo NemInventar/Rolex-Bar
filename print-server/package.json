@@ -1,0 +1,7 @@
+{
+  "name": "rolex-print",
+  "version": "1.0.0",
+  "dependencies": {
+    "@thiagoelg/node-printer": "^0.4.3"
+  }
+}
