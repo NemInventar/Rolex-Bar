@@ -929,6 +929,22 @@ function _buildReceiptHtml(ordre){
 </body></html>`;
 }
 
+async function lidhPrinter(){
+  if(typeof qz==='undefined') return;
+  const btn=document.getElementById('printer-btn');
+  if(btn){btn.textContent='🖨️ …';btn.className='connecting';}
+  try{
+    qz.security.setCertificatePromise((resolve)=>resolve());
+    qz.security.setSignatureAlgorithm('SHA512');
+    qz.security.setSignaturePromise((toSign)=>(resolve)=>resolve());
+    if(!qz.websocket.isActive()) await qz.websocket.connect({retries:2,delay:1});
+    if(btn){btn.textContent='🖨️';btn.className='online';btn.title='Printeri i lidhur';}
+  }catch(e){
+    if(btn){btn.textContent='🖨️';btn.className='';btn.title='Lidh printerin';}
+    console.warn('QZ Tray:',e);
+  }
+}
+
 async function printOrderSlip(ordre){
   const html=_buildReceiptHtml(ordre);
 
@@ -2810,14 +2826,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     else if(e.key==='Escape'){e.preventDefault();mbyllModal('kesh-modal')}
   });
 
-  // QZ Tray — forbind ved opstart så prints er stille resten af sessionen
-  if(typeof qz!=='undefined'){
-    qz.security.setCertificatePromise((resolve)=>resolve());
-    qz.security.setSignatureAlgorithm('SHA512');
-    qz.security.setSignaturePromise((toSign)=>(resolve)=>resolve());
-    qz.websocket.connect({retries:3,delay:1}).then(()=>{
-      console.log('QZ Tray forbundet');
-    }).catch(e=>console.warn('QZ Tray ikke tilgængelig:',e));
+  // QZ Tray printer-knap — bruger forbinder manuelt én gang per vagt
+  if(typeof qz==='undefined'){
+    const btn=document.getElementById('printer-btn');
+    if(btn) btn.style.display='none';
   }
 
   // Realtime subscription for live order updates
