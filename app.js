@@ -954,28 +954,7 @@ async function lidhPrinter(){
 
 async function printOrderSlip(ordre){
   const html=_buildReceiptHtml(ordre);
-
-  // Åbn print-vindue synkront mens user-gesture er aktiv (undgår popup-blokering)
   const fw=window.open('','_blank','width=500,height=400,top=80,left=80,toolbar=no,menubar=no,scrollbars=no');
-
-  // Provo QZ Tray (silent print)
-  if(typeof qz!=='undefined'){
-    try{
-      if(!qz.websocket.isActive()){
-        await qz.websocket.connect({retries:1,delay:0});
-      }
-      const printer=_qzPrinter||(await qz.printers.getDefault());
-      const cfg=qz.configs.create(printer,{colorType:'blackwhite',copies:1});
-      await qz.print(cfg,[{type:'html',format:'plain',data:html}]);
-      // QZ Tray lykkedes — luk det forhåndsåbnede vindue
-      try{if(fw&&!fw.closed)fw.close();}catch(_){}
-      return;
-    }catch(e){
-      console.error('QZ Tray fejl:',e);
-    }
-  }
-
-  // Fallback: brug det allerede åbnede vindue til print-dialog
   if(fw&&!fw.closed){
     fw.document.write(html);
     fw.document.close();
