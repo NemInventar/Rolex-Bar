@@ -1006,6 +1006,14 @@ function visCelebrationPagese(ordre, kusuri){
   celebrationOrdreId=ordre.id;
   krijoKonfetti(['#27AE60','#C9963B','#fff','#2ECC71','#F1C40F'],70);
   document.getElementById('celebration').classList.add('vis');
+  setTimeout(()=>{
+    if(document.getElementById('celebration').classList.contains('vis')){
+      mbyllCelebration();
+      mbyllModal('kvittering-modal');
+      skiftTab('aabne');
+      if(aktivFatureOrdre) printOrderSlip(aktivFatureOrdre);
+    }
+  },3000);
 }
 
 function mbyllCelebration(){
