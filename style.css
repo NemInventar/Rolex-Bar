@@ -1264,7 +1264,9 @@ body{
 .cel-ikon{font-size:4.5rem;margin-bottom:14px;animation:bounce .6s ease infinite alternate}
 @keyframes bounce{from{transform:translateY(0)}to{transform:translateY(-12px)}}
 .cel-titulli{font-size:1.6rem;font-weight:800;color:var(--tekst);margin-bottom:6px}
-.cel-sub{font-size:.95rem;color:var(--tekst-lys);margin-bottom:22px}
+.cel-sub{font-size:.95rem;color:var(--tekst-lys);margin-bottom:10px}
+.cel-print-status{font-size:.85rem;color:var(--guld);margin-bottom:16px;animation:blink 1s ease infinite alternate}
+@keyframes blink{from{opacity:.5}to{opacity:1}}
 .cel-kusuri-boks{
   background:var(--groen);border-radius:14px;
   padding:16px 24px;margin-bottom:22px;display:none;
