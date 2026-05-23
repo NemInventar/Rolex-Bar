@@ -929,6 +929,8 @@ function _buildReceiptHtml(ordre){
 </body></html>`;
 }
 
+let _qzPrinter=null;
+
 async function lidhPrinter(){
   if(typeof qz==='undefined') return;
   const btn=document.getElementById('printer-btn');
@@ -938,6 +940,11 @@ async function lidhPrinter(){
     qz.security.setSignatureAlgorithm('SHA512');
     qz.security.setSignaturePromise((toSign)=>(resolve)=>resolve());
     if(!qz.websocket.isActive()) await qz.websocket.connect({retries:2,delay:1});
+    // Pre-godkend printer-adgang så ordrer ikke spørger igen
+    _qzPrinter=await qz.printers.getDefault();
+    // Test-print (tom) for at pre-godkende print-handlingen
+    const cfg=qz.configs.create(_qzPrinter,{colorType:'blackwhite',copies:1});
+    await qz.print(cfg,[{type:'html',format:'plain',data:'<html><body></body></html>'}]);
     if(btn){btn.textContent='🖨️';btn.className='online';btn.title='Printeri i lidhur';}
   }catch(e){
     if(btn){btn.textContent='🖨️';btn.className='';btn.title='Lidh printerin';}
@@ -957,7 +964,7 @@ async function printOrderSlip(ordre){
       if(!qz.websocket.isActive()){
         await qz.websocket.connect({retries:1,delay:0});
       }
-      const printer=await qz.printers.getDefault();
+      const printer=_qzPrinter||(await qz.printers.getDefault());
       const cfg=qz.configs.create(printer,{colorType:'blackwhite',copies:1});
       await qz.print(cfg,[{type:'html',format:'plain',data:html}]);
       // QZ Tray lykkedes — luk det forhåndsåbnede vindue
