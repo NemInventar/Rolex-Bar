@@ -953,6 +953,18 @@ async function lidhPrinter(){
 }
 
 async function printOrderSlip(ordre){
+  // Prøv lokal print-server (silent)
+  try{
+    const r=await fetch('http://localhost:3001/print',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(ordre),
+      signal:AbortSignal.timeout(3000)
+    });
+    if(r.ok) return; // silent print lykkedes
+  }catch(_){}
+
+  // Fallback: print-dialog
   const html=_buildReceiptHtml(ordre);
   const fw=window.open('','_blank','width=500,height=400,top=80,left=80,toolbar=no,menubar=no,scrollbars=no');
   if(fw&&!fw.closed){
