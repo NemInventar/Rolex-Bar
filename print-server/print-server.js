@@ -1,16 +1,21 @@
 const http = require('http');
-const printer = require('@thiagoelg/node-printer');
+const { execSync } = require('child_process');
+const fs = require('fs');
+const path = require('path');
+const os = require('os');
 
 const PORT = 3001;
 const PRINTER_NAME = 'RONGTA 80mm Series Printer';
+const PS_SCRIPT = path.join(__dirname, 'print-raw.ps1');
 const ESC = 0x1B, GS = 0x1D;
 
+function rjust(left, right, total) {
+  right = String(right);
+  left = left.slice(0, total - right.length - 1);
+  return left + ' '.repeat(Math.max(1, total - left.length - right.length)) + right;
+}
+
 function buildReceipt(o) {
-  function rjust(left, right, total) {
-    right = String(right);
-    left = left.slice(0, total - right.length - 1);
-    return left + ' '.repeat(Math.max(1, total - left.length - right.length)) + right;
-  }
   const chunks = [
     Buffer.from([ESC, 0x40]),
     Buffer.from([ESC, 0x61, 0x01]),
@@ -38,6 +43,19 @@ function buildReceipt(o) {
   return Buffer.concat(chunks);
 }
 
+function printRaw(data) {
+  const tmpFile = path.join(os.tmpdir(), 'receipt_' + Date.now() + '.bin');
+  fs.writeFileSync(tmpFile, data);
+  try {
+    execSync(
+      `powershell -ExecutionPolicy Bypass -File "${PS_SCRIPT}" -PrinterName "${PRINTER_NAME}" -DataFile "${tmpFile}"`,
+      { timeout: 15000 }
+    );
+  } finally {
+    try { fs.unlinkSync(tmpFile); } catch (_) {}
+  }
+}
+
 const server = http.createServer((req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -55,16 +73,12 @@ const server = http.createServer((req, res) => {
       try {
         const order = JSON.parse(body);
         const data = buildReceipt(order);
-        printer.printDirect({
-          data,
-          printer: PRINTER_NAME,
-          type: 'RAW',
-          success: id => { console.log('Print OK, job', id); res.writeHead(200); res.end('{"ok":true}'); },
-          error: err => { console.error('Print fejl:', err); res.writeHead(500); res.end(JSON.stringify({ error: String(err) })); }
-        });
+        printRaw(data);
+        console.log('Print OK:', order.ordre_nummer || '-');
+        res.writeHead(200); res.end('{"ok":true}');
       } catch (e) {
-        console.error(e);
-        res.writeHead(400); res.end(JSON.stringify({ error: e.message }));
+        console.error('Print error:', e.message);
+        res.writeHead(500); res.end(JSON.stringify({ error: e.message }));
       }
     });
   } else {
@@ -75,4 +89,5 @@ const server = http.createServer((req, res) => {
 server.listen(PORT, '127.0.0.1', () => {
   console.log('Rolex Bar printserver korer pa port ' + PORT);
   console.log('Printer: ' + PRINTER_NAME);
+  console.log('PS script: ' + PS_SCRIPT);
 });
